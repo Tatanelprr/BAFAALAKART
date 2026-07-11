@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { initializeApp, getApps, deleteApp } from 'firebase/app'
+import { initializeApp, deleteApp } from 'firebase/app'
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
 import { writeBatch, doc, collection, serverTimestamp } from 'firebase/firestore'
 import { db, firebaseConfig } from '@/lib/firebase/config'

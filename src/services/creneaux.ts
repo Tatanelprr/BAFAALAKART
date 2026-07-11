@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, orderBy, query } from 'firebase/firestore'
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, orderBy, query } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { Creneau } from '@/types'
 

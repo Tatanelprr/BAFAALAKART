@@ -75,7 +75,7 @@ export function PresenceList({
               <Checkbox
                 checked={estPresent}
                 disabled={isLoading}
-                onCheckedChange={(_checked) =>
+                onCheckedChange={() =>
                   handleToggle(insc.stagiaireId, insc.id, estPresent)
                 }
                 aria-label={`Présence de ${stagiaire.prenom} ${stagiaire.nom}`}

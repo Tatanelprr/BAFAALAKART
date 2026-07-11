@@ -11,13 +11,10 @@ interface UsePresencesResult {
 
 export function usePresences(tempsId?: string): UsePresencesResult {
   const [presences, setPresences] = useState<Presence[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!tempsId) {
-      setLoading(false)
-      return
-    }
+    if (!tempsId) return
     const q = query(collection(db, 'presences'), where('tempsId', '==', tempsId))
     const unsub = onSnapshot(q, snap => {
       setPresences(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Presence))
