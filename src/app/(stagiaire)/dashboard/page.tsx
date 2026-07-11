@@ -1,3 +1,220 @@
+'use client'
+
+import { useState, useMemo } from 'react'
+import { useAuth } from '@/hooks/useAuth'
+import { useTemps } from '@/hooks/useTemps'
+import { useInscriptions } from '@/hooks/useInscriptions'
+import { inscrire, inscrireAtelier, desinscrire } from '@/services/inscriptions'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import { PlanningView } from '@/components/planning/PlanningView'
+
 export default function DashboardStagiaire() {
-  return <div className="p-4"><h1 className="text-xl font-bold">Dashboard Stagiaire</h1></div>
+  const { currentUser } = useAuth()
+  const { temps, creneaux, ateliers, loading: loadingTemps } = useTemps()
+  const uid = currentUser?.uid ?? ''
+  const { inscriptions, loading: loadingInscriptions } = useInscriptions(uid)
+
+  const [error, setError] = useState<string | null>(null)
+
+  const typeStagiaire = currentUser?.typeStagiaire ?? 'Base'
+
+  // Build tempsCreneauMap: { [tempsId]: creneauId }
+  const tempsCreneauMap = useMemo<Record<string, string>>(() => {
+    return temps.reduce<Record<string, string>>((acc, t) => {
+      acc[t.id] = t.creneauId
+      return acc
+    }, {})
+  }, [temps])
+
+  const handleInscrire = async (tempsId: string, creneauId: string) => {
+    if (!uid) return
+    setError(null)
+    try {
+      const tempsItem = temps.find(t => t.id === tempsId)
+      if (tempsItem?.type === 'violet' && tempsItem.atelierId) {
+        await inscrireAtelier(uid, tempsItem.atelierId)
+      } else {
+        await inscrire(uid, tempsId, creneauId)
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message === 'CRENEAU_OCCUPE') {
+        setError('Ce créneau est déjà occupé par une autre activité.')
+      } else if (message === 'CONFLIT_ATELIER') {
+        setError("Cet atelier entre en conflit avec une de vos inscriptions existantes.")
+      } else {
+        setError("Une erreur est survenue lors de l'inscription.")
+      }
+    }
+  }
+
+  const handleDesinscrire = async (inscriptionId: string, creneauId: string) => {
+    if (!uid) return
+    setError(null)
+    try {
+      await desinscrire(inscriptionId, uid, creneauId)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message === 'INSCRIPTION_VERROUILEE') {
+        setError("Cette inscription est verrouillée et ne peut pas être supprimée.")
+      } else {
+        setError("Une erreur est survenue lors de la désinscription.")
+      }
+    }
+  }
+
+  // Mes ateliers : inscriptions liées à des temps violet
+  const mesAteliers = useMemo(() => {
+    const ateliersInscrits = new Set<string>()
+    inscriptions.forEach(insc => {
+      const tempsItem = temps.find(t => t.id === insc.tempsId)
+      if (tempsItem?.type === 'violet' && tempsItem.atelierId) {
+        ateliersInscrits.add(tempsItem.atelierId)
+      }
+    })
+    return ateliers.filter(a => ateliersInscrits.has(a.id))
+  }, [inscriptions, temps, ateliers])
+
+  const loading = loadingTemps || loadingInscriptions
+
+  if (!currentUser) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        Chargement du profil…
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* Header */}
+      <header className="px-4 pt-6 pb-4 border-b bg-card">
+        <p className="text-xs text-muted-foreground mb-0.5">Bonjour,</p>
+        <h1 className="text-xl font-bold leading-tight">
+          {currentUser.prenom} {currentUser.nom}
+        </h1>
+        <p className="text-xs text-muted-foreground mt-1">
+          Groupe{' '}
+          <span className="font-medium text-foreground">{typeStagiaire}</span>
+        </p>
+      </header>
+
+      {/* Error alert */}
+      {error && (
+        <div className="mx-4 mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive flex items-start justify-between gap-2">
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="shrink-0 font-medium hover:underline"
+            aria-label="Fermer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex-1 px-4 py-4">
+        {loading ? (
+          <div className="py-12 text-center text-muted-foreground text-sm">
+            Chargement du planning…
+          </div>
+        ) : (
+          <Tabs defaultValue="planning">
+            <TabsList className="w-full mb-4">
+              <TabsTrigger value="planning" className="flex-1">
+                Planning
+              </TabsTrigger>
+              <TabsTrigger value="ateliers" className="flex-1">
+                Mes ateliers
+                {mesAteliers.length > 0 && (
+                  <Badge className="ml-1.5 bg-purple-100 text-purple-700 border-purple-300 h-4 px-1.5 text-[10px]">
+                    {mesAteliers.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="planning">
+              <PlanningView
+                creneaux={creneaux}
+                temps={temps}
+                ateliers={ateliers}
+                inscriptions={inscriptions}
+                stagiaireId={uid}
+                typeStagiaire={typeStagiaire}
+                tempsCreneauMap={tempsCreneauMap}
+                onInscrire={handleInscrire}
+                onDesinscrire={handleDesinscrire}
+              />
+            </TabsContent>
+
+            <TabsContent value="ateliers">
+              {mesAteliers.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground text-sm">
+                  Vous n&apos;êtes inscrit à aucun atelier pour le moment.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {mesAteliers.map(atelier => {
+                    // Find temps violet belonging to this atelier
+                    const tempsAtelier = temps.filter(
+                      t => t.type === 'violet' && t.atelierId === atelier.id
+                    )
+                    // Find their creneaux
+                    const creneauxAtelier = creneaux.filter(c =>
+                      tempsAtelier.some(t => t.creneauId === c.id)
+                    )
+
+                    return (
+                      <div
+                        key={atelier.id}
+                        className="rounded-xl border border-purple-200 bg-purple-50 p-3 sm:p-4"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-sm">{atelier.nom}</h3>
+                          <Badge className="bg-purple-100 text-purple-700 border-purple-300 shrink-0">
+                            Atelier
+                          </Badge>
+                        </div>
+                        {atelier.description && (
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {atelier.description}
+                          </p>
+                        )}
+                        {creneauxAtelier.length > 0 && (
+                          <div className="flex flex-col gap-1">
+                            {creneauxAtelier.map(c => (
+                              <p key={c.id} className="text-xs text-purple-800">
+                                📅 {formatJourCourt(c.jour)} · {c.heureDebut}–{c.heureFin}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const JOURS_SEMAINE = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.']
+const MOIS = [
+  'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
+  'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
+]
+
+function formatJourCourt(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  const nomJour = JOURS_SEMAINE[date.getUTCDay()]
+  const nomMois = MOIS[date.getUTCMonth()]
+  return `${nomJour} ${date.getUTCDate()} ${nomMois}`
 }
