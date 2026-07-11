@@ -67,5 +67,8 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
       - name: Deploy to Firebase Hosting
-        run: npx firebase deploy --only hosting --project bafaalakart --token "${{ secrets.FIREBASE_TOKEN }}"
+        run: firebase deploy --only hosting --project bafaalakart --token "${{ secrets.FIREBASE_TOKEN }}"
