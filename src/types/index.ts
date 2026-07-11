@@ -53,6 +53,7 @@ export interface Inscription {
   id: string
   stagiaireId: string
   tempsId: string
+  creneauId: string
   dateCreation: Timestamp
   origine: OrigineInscription
   verrouille: boolean

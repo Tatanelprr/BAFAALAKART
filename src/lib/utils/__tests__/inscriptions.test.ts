@@ -7,6 +7,7 @@ const makeInscription = (overrides: Partial<Inscription>): Inscription => ({
   id: '1',
   stagiaireId: 'stagiaire1',
   tempsId: 'temps1',
+  creneauId: 'creneau1',
   dateCreation: Timestamp.now(),
   origine: 'choix',
   verrouille: false,
