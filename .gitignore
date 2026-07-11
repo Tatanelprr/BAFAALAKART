@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# credentials (identifiants et mots de passe en clair — ne jamais commiter)
+/credentials/
