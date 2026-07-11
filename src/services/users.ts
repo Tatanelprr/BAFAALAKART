@@ -1,6 +1,6 @@
 import { collection, doc, getDoc, getDocs, query, where, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { User, UserRole } from '@/types'
+import { User } from '@/types'
 
 export async function getUser(uid: string): Promise<User | null> {
   const snap = await getDoc(doc(db, 'users', uid))

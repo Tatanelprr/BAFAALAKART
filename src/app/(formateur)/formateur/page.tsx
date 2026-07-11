@@ -89,10 +89,7 @@ export default function DashboardFormateur() {
     return temps.filter(t => creneauIdsDuJour.has(t.creneauId))
   }, [temps, creneauxDuJour])
 
-  // Reset selected temps when day changes
-  useEffect(() => {
-    setSelectedTempsId('')
-  }, [selectedDay])
+  // Reset selected temps when day changes — done in handleDayChange
 
   // Inscriptions filtered for selected temps
   const inscriptionsDuTemps = useMemo(
@@ -149,7 +146,7 @@ export default function DashboardFormateur() {
                 variant={isSelected ? 'default' : 'outline'}
                 size="sm"
                 className={`shrink-0 text-xs px-2 ${isToday && !isSelected ? 'border-primary text-primary' : ''}`}
-                onClick={() => setSelectedDay(date)}
+                onClick={() => { setSelectedDay(date); setSelectedTempsId('') }}
               >
                 {formatJourLabel(date)}
               </Button>
