@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { UserManager } from '@/components/admin/UserManager'
 import { TempsManager } from '@/components/admin/TempsManager'
+import { InscriptionsManager } from '@/components/admin/InscriptionsManager'
 
 function Placeholder() {
   return (
@@ -61,7 +62,7 @@ export default function DashboardAdmin() {
           </TabsContent>
 
           <TabsContent value="inscriptions">
-            <Placeholder />
+            <InscriptionsManager />
           </TabsContent>
 
           <TabsContent value="import">
