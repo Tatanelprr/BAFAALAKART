@@ -29,9 +29,7 @@ service cloud.firestore {
 
     // ─── users ─────────────────────────────────────────────────────
     match /users/{uid} {
-      // Lecture de son propre doc : authentifié
       allow read: if isOwner(uid) || isFormateur();
-      // Écriture : admin seulement
       allow write: if isAdmin();
     }
 
