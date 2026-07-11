@@ -1,8 +1,95 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    // ─── Helpers ───────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isAuth() && getRole() == 'admin';
+    }
+
+    function isFormateur() {
+      return isAuth() && (getRole() == 'formateur' || getRole() == 'admin');
+    }
+
+    function isStagiaire() {
+      return isAuth() && getRole() == 'stagiaire';
+    }
+
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    // ─── users ─────────────────────────────────────────────────────
+    match /users/{uid} {
+      // Lecture de son propre doc : authentifié
+      allow read: if isOwner(uid) || isFormateur();
+      // Écriture : admin seulement
+      allow write: if isAdmin();
+    }
+
+    // ─── session ───────────────────────────────────────────────────
+    match /session/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ─── creneaux ──────────────────────────────────────────────────
+    match /creneaux/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ─── temps ─────────────────────────────────────────────────────
+    match /temps/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ─── ateliers ──────────────────────────────────────────────────
+    match /ateliers/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ─── inscriptions ──────────────────────────────────────────────
+    match /inscriptions/{docId} {
+      // Lecture : stagiaire (ses propres), formateur, admin
+      allow read: if isFormateur() || (isStagiaire() && resource.data.stagiaireId == request.auth.uid);
+      // Création : stagiaire pour soi-même (non verrouillé) ou admin
+      allow create: if isAdmin() ||
+        (isStagiaire() &&
+         request.resource.data.stagiaireId == request.auth.uid &&
+         request.resource.data.verrouille == false);
+      // Mise à jour : admin seulement (le verrouillage est géré par le service)
+      allow update: if isAdmin() || isFormateur();
+      // Suppression : admin seulement
+      allow delete: if isAdmin();
+    }
+
+    // ─── slots (contrainte unicité créneau) ────────────────────────
+    match /slots/{docId} {
+      allow read, write: if isAuth();
+    }
+
+    // ─── presences ─────────────────────────────────────────────────
+    match /presences/{docId} {
+      allow read: if isFormateur() || (isStagiaire() && resource.data.stagiaireId == request.auth.uid);
+      allow write: if isFormateur();
+    }
+
+    // ─── historique ────────────────────────────────────────────────
+    match /historique/{docId} {
+      allow read: if isAdmin();
+      allow create: if isAuth();
+      allow update, delete: if false;
     }
   }
 }
