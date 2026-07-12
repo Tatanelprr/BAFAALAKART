@@ -160,11 +160,12 @@ export function OnboardingWizard({
   const handleSubmit = async () => {
     setSaving(true)
     setError(null)
-    // Track creneaux booked during this batch (for multi-créneau ateliers)
-    const bookedInBatch = new Set<string>(Object.keys(existingByCreneauId))
+    // Track creneaux bookés dans CE batch (pour éviter double-booking des ateliers multi-créneau)
+    const bookedInBatch = new Set<string>()
 
     try {
       for (const [creneauId, tempsId] of Object.entries(selections)) {
+        // Sauter uniquement si bookés PAR CE batch (ex. atelier), pas les inscriptions Firestore
         if (bookedInBatch.has(creneauId)) continue
 
         const existing = existingByCreneauId[creneauId]
@@ -172,12 +173,10 @@ export function OnboardingWizard({
         if (existing) {
           if (existing.tempsId === tempsId) {
             // Aucun changement
-            bookedInBatch.add(creneauId)
             continue
           }
           if (existing.verrouille) {
             // Verrouillée, on ne touche pas
-            bookedInBatch.add(creneauId)
             continue
           }
           // Sélection modifiée : on remplace
