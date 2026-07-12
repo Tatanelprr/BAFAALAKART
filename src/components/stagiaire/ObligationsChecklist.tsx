@@ -3,6 +3,15 @@
 import { useMemo } from 'react'
 import { Temps, TypeStagiaire } from '@/types'
 
+function commonPrefix(strings: string[]): string {
+  if (strings.length === 0) return ''
+  let prefix = strings[0]
+  for (const s of strings.slice(1)) {
+    while (!s.startsWith(prefix)) prefix = prefix.slice(0, -1)
+  }
+  return prefix.trim().replace(/:$/, '').trim()
+}
+
 interface ChecklistItem {
   key: string
   label: string
@@ -38,13 +47,13 @@ export function ObligationsChecklist({ temps, coveredTempsIds, typeStagiaire }: 
         .filter((t): t is Temps => Boolean(t))
       const uniqueNoms = [...new Set(tempsInGroup.map(t => t.nom))]
       const isGroup = uniqueNoms.length > 1
-      const label = isGroup ? uniqueNoms[0].replace(/\s*\d.*$/, '').trim() || key : (uniqueNoms[0] ?? key)
+      const label = isGroup ? commonPrefix(uniqueNoms) || key : (uniqueNoms[0] ?? key)
       const covered = ids.some(id => coveredTempsIds.has(id))
 
       return {
         key,
-        label: isGroup ? `1 parmi plusieurs temps` : label,
-        detail: isGroup ? uniqueNoms.join(' · ') : undefined,
+        label,
+        detail: isGroup ? `1 parmi : ${uniqueNoms.join(', ')}` : undefined,
         covered,
       }
     })
