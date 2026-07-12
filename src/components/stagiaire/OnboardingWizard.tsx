@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Creneau, Temps, Atelier, Inscription, TypeStagiaire } from '@/types'
-import { inscrire, inscrireAtelier } from '@/services/inscriptions'
+import { inscrire, inscrireAtelier, desinscrire } from '@/services/inscriptions'
 import { getTempsVisiblesParStagiaire } from '@/lib/utils/planning'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -101,7 +101,8 @@ export function OnboardingWizard({
   }, [inscriptions])
 
   const handleSelect = (creneauId: string, tempsId: string) => {
-    if (existingByCreneauId[creneauId]) return // already saved in Firestore, read-only
+    const existing = existingByCreneauId[creneauId]
+    if (existing?.verrouille) return // inscription verrouillée, non modifiable
     setSelections(prev => ({ ...prev, [creneauId]: tempsId }))
   }
 
@@ -114,11 +115,28 @@ export function OnboardingWizard({
     try {
       for (const [creneauId, tempsId] of Object.entries(selections)) {
         if (bookedInBatch.has(creneauId)) continue
+
+        const existing = existingByCreneauId[creneauId]
+
+        if (existing) {
+          if (existing.tempsId === tempsId) {
+            // Aucun changement
+            bookedInBatch.add(creneauId)
+            continue
+          }
+          if (existing.verrouille) {
+            // Verrouillée, on ne touche pas
+            bookedInBatch.add(creneauId)
+            continue
+          }
+          // Sélection modifiée : on remplace
+          await desinscrire(existing.id, stagiaireId, creneauId)
+        }
+
         const t = temps.find(t => t.id === tempsId)
         if (!t) continue
         if (t.type === 'violet' && t.atelierId) {
           await inscrireAtelier(stagiaireId, t.atelierId)
-          // Mark all creneaux of this atelier as booked
           temps
             .filter(at => at.atelierId === t.atelierId && at.type === 'violet')
             .forEach(at => bookedInBatch.add(at.creneauId))
@@ -185,12 +203,16 @@ export function OnboardingWizard({
               if (visibles.length === 0) return null
 
               const selected = selections[creneau.id]
-              const isExisting = Boolean(existingByCreneauId[creneau.id])
+              const existingInscription = existingByCreneauId[creneau.id]
+              const isVerrouille = existingInscription?.verrouille ?? false
 
               return (
                 <div key={creneau.id} className="mb-4">
                   <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
                     {creneau.heureDebut} – {creneau.heureFin}
+                    {isVerrouille && (
+                      <span className="ml-2 text-slate-400" title="Inscription verrouillée">🔒</span>
+                    )}
                   </p>
                   <div className="flex flex-col gap-2">
                     {visibles.map(t => {
@@ -204,14 +226,14 @@ export function OnboardingWizard({
                           key={t.id}
                           type="button"
                           onClick={() => handleSelect(creneau.id, t.id)}
-                          disabled={isExisting}
+                          disabled={isVerrouille}
                           className={[
                             'w-full text-left rounded-lg border-2 p-3 transition-all',
                             colorsByType[t.type],
                             isSelected
                               ? 'border-blue-400 ring-2 ring-blue-200 ring-offset-1'
                               : 'border-transparent hover:border-current/20',
-                            isExisting ? 'cursor-default' : 'cursor-pointer',
+                            isVerrouille ? 'cursor-default opacity-70' : 'cursor-pointer',
                           ].join(' ')}
                         >
                           <div className="flex items-start gap-2">
