@@ -390,6 +390,8 @@ interface TempsFormState {
   obligatoireAppro: boolean
   atelierId: string
   capaciteMin: number
+  groupeBase: string
+  groupeAppro: string
 }
 
 function defaultTempsForm(): TempsFormState {
@@ -402,6 +404,8 @@ function defaultTempsForm(): TempsFormState {
     obligatoireAppro: false,
     atelierId: '',
     capaciteMin: 0,
+    groupeBase: '',
+    groupeAppro: '',
   }
 }
 
@@ -419,39 +423,26 @@ function TempsDialog({
   trigger: React.ReactNode
 }) {
   const [open, setOpen] = useState(false)
+  const tempsToForm = (t: Temps): TempsFormState => ({
+    nom: t.nom,
+    description: t.description,
+    type: t.type,
+    creneauId: t.creneauId,
+    obligatoireBase: t.obligatoireBase,
+    obligatoireAppro: t.obligatoireAppro,
+    atelierId: t.atelierId ?? '',
+    capaciteMin: t.capaciteMin,
+    groupeBase: t.groupeBase ?? '',
+    groupeAppro: t.groupeAppro ?? '',
+  })
+
   const [form, setForm] = useState<TempsFormState>(
-    temps
-      ? {
-          nom: temps.nom,
-          description: temps.description,
-          type: temps.type,
-          creneauId: temps.creneauId,
-          obligatoireBase: temps.obligatoireBase,
-          obligatoireAppro: temps.obligatoireAppro,
-          atelierId: temps.atelierId ?? '',
-          capaciteMin: temps.capaciteMin,
-        }
-      : defaultTempsForm()
+    temps ? tempsToForm(temps) : defaultTempsForm()
   )
   const [saving, setSaving] = useState(false)
 
   const handleOpenChange = (val: boolean) => {
-    if (val) {
-      setForm(
-        temps
-          ? {
-              nom: temps.nom,
-              description: temps.description,
-              type: temps.type,
-              creneauId: temps.creneauId,
-              obligatoireBase: temps.obligatoireBase,
-              obligatoireAppro: temps.obligatoireAppro,
-              atelierId: temps.atelierId ?? '',
-              capaciteMin: temps.capaciteMin,
-            }
-          : defaultTempsForm()
-      )
-    }
+    if (val) setForm(temps ? tempsToForm(temps) : defaultTempsForm())
     setOpen(val)
   }
 
@@ -467,6 +458,8 @@ function TempsDialog({
         obligatoireAppro: form.obligatoireAppro,
         capaciteMin: form.capaciteMin,
         ...(form.type === 'violet' && form.atelierId ? { atelierId: form.atelierId } : {}),
+        ...(form.groupeBase ? { groupeBase: form.groupeBase } : {}),
+        ...(form.groupeAppro ? { groupeAppro: form.groupeAppro } : {}),
       }
       if (temps) {
         await updateTemps(temps.id, data)
@@ -582,6 +575,34 @@ function TempsDialog({
                 <label htmlFor="obligatoireAppro" className="text-sm cursor-pointer">
                   Obligatoire Approfondissement
                 </label>
+              </div>
+            </div>
+          )}
+
+          {/* Groupes "1 parmi" (affiché si type = bleu) */}
+          {isBleu && (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Groupe Base (optionnel)</Label>
+                <Input
+                  value={form.groupeBase}
+                  onChange={e => setForm(f => ({ ...f, groupeBase: e.target.value }))}
+                  placeholder="ex: reglementation-specifique"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Si renseigné, 1 seul temps de ce groupe suffit pour valider l&apos;obligation Base.
+                </p>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Groupe Appro (optionnel)</Label>
+                <Input
+                  value={form.groupeAppro}
+                  onChange={e => setForm(f => ({ ...f, groupeAppro: e.target.value }))}
+                  placeholder="ex: hms-appro"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Si renseigné, 1 seul temps de ce groupe suffit pour valider l&apos;obligation Appro.
+                </p>
               </div>
             </div>
           )}
