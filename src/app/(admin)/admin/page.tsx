@@ -36,6 +36,9 @@ export default function DashboardAdmin() {
           </h1>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => router.push('/formateur')}>
+            Faire l&apos;appel
+          </Button>
           <ChangePasswordDialog
             identifiant={currentUser.identifiant}
             trigger={
