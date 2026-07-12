@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PlanningView } from '@/components/planning/PlanningView'
 import { OnboardingWizard } from '@/components/stagiaire/OnboardingWizard'
+import { ObligationsChecklist } from '@/components/stagiaire/ObligationsChecklist'
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog'
 import { getCreneauxVisiblesParStagiaire } from '@/lib/utils/planning'
 
@@ -172,12 +173,15 @@ export default function DashboardStagiaire() {
                 Planning
               </TabsTrigger>
               <TabsTrigger value="ateliers" className="flex-1">
-                Mes ateliers
+                Ateliers
                 {mesAteliers.length > 0 && (
                   <Badge className="ml-1.5 bg-purple-100 text-purple-700 border-purple-300 h-4 px-1.5 text-[10px]">
                     {mesAteliers.length}
                   </Badge>
                 )}
+              </TabsTrigger>
+              <TabsTrigger value="obligations" className="flex-1">
+                Mes bleus
               </TabsTrigger>
             </TabsList>
 
@@ -192,6 +196,14 @@ export default function DashboardStagiaire() {
                 tempsCreneauMap={tempsCreneauMap}
                 onInscrire={handleInscrire}
                 onChanger={handleChanger}
+              />
+            </TabsContent>
+
+            <TabsContent value="obligations">
+              <ObligationsChecklist
+                temps={temps}
+                coveredTempsIds={new Set(inscriptions.map(i => i.tempsId))}
+                typeStagiaire={typeStagiaire}
               />
             </TabsContent>
 
