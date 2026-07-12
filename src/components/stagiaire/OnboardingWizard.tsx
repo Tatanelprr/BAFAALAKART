@@ -6,6 +6,7 @@ import { inscrire, inscrireAtelier, desinscrire } from '@/services/inscriptions'
 import { getTempsVisiblesParStagiaire } from '@/lib/utils/planning'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ObligationsChecklist } from './ObligationsChecklist'
 
 interface Props {
   creneaux: Creneau[]
@@ -206,6 +207,13 @@ export function OnboardingWizard({
 
       {/* Scrollable content */}
       <div className="flex-1 px-4 py-4 pb-28 flex flex-col gap-6">
+        {/* Checklist des obligations */}
+        <ObligationsChecklist
+          temps={temps}
+          coveredTempsIds={new Set(Object.values(selections))}
+          typeStagiaire={typeStagiaire}
+        />
+
         {jours.map(jour => (
           <section key={jour}>
             <div className="flex items-center gap-3 mb-3">
