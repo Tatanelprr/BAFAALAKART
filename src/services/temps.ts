@@ -1,6 +1,6 @@
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { Temps } from '@/types'
+import { Temps, Inscription } from '@/types'
 
 type CreateTempsData = Omit<Temps, 'id'>
 
@@ -31,5 +31,18 @@ export async function updateTemps(id: string, data: Partial<CreateTempsData>): P
 }
 
 export async function deleteTemps(id: string): Promise<void> {
+  // Cascade : supprimer les inscriptions et slots associés avant le temps
+  const inscSnap = await getDocs(query(collection(db, 'inscriptions'), where('tempsId', '==', id)))
+  await Promise.all(
+    inscSnap.docs.map(async d => {
+      const insc = { id: d.id, ...d.data() } as Inscription
+      await deleteDoc(d.ref)
+      try {
+        await deleteDoc(doc(db, 'slots', `${insc.stagiaireId}_${insc.creneauId}`))
+      } catch {
+        // Le slot peut ne pas exister
+      }
+    })
+  )
   await deleteDoc(doc(db, 'temps', id))
 }
