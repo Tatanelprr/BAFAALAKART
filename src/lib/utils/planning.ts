@@ -1,4 +1,11 @@
-import { Temps, TypeStagiaire } from '@/types'
+import { Creneau, Temps, TypeStagiaire } from '@/types'
+
+export function getCreneauxVisiblesParStagiaire(creneaux: Creneau[], typeStagiaire: TypeStagiaire): Creneau[] {
+  if (typeStagiaire === 'Approfondissement') {
+    return creneaux.filter(c => !c.baseOnly)
+  }
+  return creneaux
+}
 
 export function getTempsVisiblesParStagiaire(temps: Temps[], typeStagiaire: TypeStagiaire): Temps[] {
   return temps.filter(t => {

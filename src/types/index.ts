@@ -29,6 +29,7 @@ export interface Creneau {
   heureDebut: string  // ex: "09:00"
   heureFin: string    // ex: "11:00"
   ordre: number
+  baseOnly?: boolean  // si true, invisible pour les stagiaires Approfondissement
 }
 
 export interface Temps {

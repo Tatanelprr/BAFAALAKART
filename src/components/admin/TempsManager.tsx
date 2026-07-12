@@ -75,10 +75,11 @@ interface CreneauFormState {
   heureDebut: string
   heureFin: string
   ordre: number
+  baseOnly: boolean
 }
 
 function defaultCreneauForm(): CreneauFormState {
-  return { jour: '2026-07-12', heureDebut: '09:00', heureFin: '11:00', ordre: 1 }
+  return { jour: '2026-07-12', heureDebut: '09:00', heureFin: '11:00', ordre: 1, baseOnly: false }
 }
 
 function CreneauDialog({
@@ -93,7 +94,7 @@ function CreneauDialog({
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<CreneauFormState>(
     creneau
-      ? { jour: creneau.jour, heureDebut: creneau.heureDebut, heureFin: creneau.heureFin, ordre: creneau.ordre }
+      ? { jour: creneau.jour, heureDebut: creneau.heureDebut, heureFin: creneau.heureFin, ordre: creneau.ordre, baseOnly: creneau.baseOnly ?? false }
       : defaultCreneauForm()
   )
   const [saving, setSaving] = useState(false)
@@ -102,7 +103,7 @@ function CreneauDialog({
     if (val) {
       setForm(
         creneau
-          ? { jour: creneau.jour, heureDebut: creneau.heureDebut, heureFin: creneau.heureFin, ordre: creneau.ordre }
+          ? { jour: creneau.jour, heureDebut: creneau.heureDebut, heureFin: creneau.heureFin, ordre: creneau.ordre, baseOnly: creneau.baseOnly ?? false }
           : defaultCreneauForm()
       )
     }
@@ -170,6 +171,16 @@ function CreneauDialog({
               value={form.ordre}
               onChange={e => setForm(f => ({ ...f, ordre: parseInt(e.target.value) || 1 }))}
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              checked={form.baseOnly}
+              onCheckedChange={val => setForm(f => ({ ...f, baseOnly: val === true }))}
+              id="baseOnly"
+            />
+            <label htmlFor="baseOnly" className="text-sm cursor-pointer">
+              Réservé aux stagiaires Base uniquement
+            </label>
           </div>
         </div>
 
