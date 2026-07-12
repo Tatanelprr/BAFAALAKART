@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { PlanningView } from '@/components/planning/PlanningView'
 import { OnboardingWizard } from '@/components/stagiaire/OnboardingWizard'
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog'
+import { getCreneauxVisiblesParStagiaire } from '@/lib/utils/planning'
 
 export default function DashboardStagiaire() {
   const { currentUser, logout } = useAuth()
@@ -23,6 +24,11 @@ export default function DashboardStagiaire() {
   const [error, setError] = useState<string | null>(null)
 
   const typeStagiaire = currentUser?.typeStagiaire ?? 'Base'
+
+  const creneauxVisibles = useMemo(
+    () => getCreneauxVisiblesParStagiaire(creneaux, typeStagiaire),
+    [creneaux, typeStagiaire]
+  )
 
   const tempsCreneauMap = useMemo<Record<string, string>>(() => {
     return temps.reduce<Record<string, string>>((acc, t) => {
@@ -150,9 +156,9 @@ export default function DashboardStagiaire() {
           <div className="py-12 text-center text-muted-foreground text-sm">
             Chargement du planning…
           </div>
-        ) : inscriptions.length < creneaux.length ? (
+        ) : inscriptions.length < creneauxVisibles.length ? (
           <OnboardingWizard
-            creneaux={creneaux}
+            creneaux={creneauxVisibles}
             temps={temps}
             ateliers={ateliers}
             inscriptions={inscriptions}
@@ -177,7 +183,7 @@ export default function DashboardStagiaire() {
 
             <TabsContent value="planning">
               <PlanningView
-                creneaux={creneaux}
+                creneaux={creneauxVisibles}
                 temps={temps}
                 ateliers={ateliers}
                 inscriptions={inscriptions}
