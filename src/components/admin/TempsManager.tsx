@@ -137,7 +137,7 @@ function CreneauDialog({
           <DialogTitle>{creneau ? 'Modifier le créneau' : 'Ajouter un créneau'}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-2">
+        <div className="flex flex-col gap-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
           <div className="flex flex-col gap-1.5">
             <Label>Jour (AAAA-MM-JJ)</Label>
             <Input
