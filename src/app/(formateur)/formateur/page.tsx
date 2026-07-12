@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useTemps } from '@/hooks/useTemps'
 import { useInscriptions } from '@/hooks/useInscriptions'
@@ -59,7 +60,8 @@ const TYPE_BORDER: Record<string, string> = {
 }
 
 export default function DashboardFormateur() {
-  const { currentUser } = useAuth()
+  const { currentUser, logout } = useAuth()
+  const router = useRouter()
   const { temps, creneaux, loading: loadingTemps } = useTemps()
   const { inscriptions } = useInscriptions()
   const [selectedDay, setSelectedDay] = useState<string>(getDefaultDay)
@@ -128,21 +130,22 @@ export default function DashboardFormateur() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
-      <header className="px-4 pt-6 pb-4 border-b bg-card flex items-center justify-between gap-4">
+      <header className="px-4 pt-6 pb-4 border-b bg-card flex items-start justify-between gap-4">
         <div>
           <p className="text-xs text-muted-foreground mb-0.5">Formateur</p>
           <h1 className="text-xl font-bold leading-tight">
             {currentUser.prenom} {currentUser.nom}
           </h1>
         </div>
-        <ChangePasswordDialog
-          identifiant={currentUser.identifiant}
-          trigger={
-            <Button variant="outline" size="sm">
-              Mot de passe
-            </Button>
-          }
-        />
+        <div className="flex flex-col gap-1.5 items-end shrink-0 mt-1">
+          <ChangePasswordDialog
+            identifiant={currentUser.identifiant}
+            trigger={<Button variant="outline" size="sm">Mot de passe</Button>}
+          />
+          <Button variant="outline" size="sm" onClick={async () => { await logout(); router.replace('/login') }}>
+            Déconnexion
+          </Button>
+        </div>
       </header>
 
       {/* Day filter */}
