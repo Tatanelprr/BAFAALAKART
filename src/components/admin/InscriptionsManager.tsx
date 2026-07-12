@@ -223,6 +223,14 @@ function StagiaireSection({
   const tempsById = new Map(temps.map(t => [t.id, t]))
   const creneauxById = new Map(creneaux.map(c => [c.id, c]))
 
+  const sortedInscriptions = [...inscriptions].sort((a, b) => {
+    const ca = creneauxById.get(a.creneauId)
+    const cb = creneauxById.get(b.creneauId)
+    if (!ca || !cb) return 0
+    if (ca.jour !== cb.jour) return ca.jour.localeCompare(cb.jour)
+    return ca.ordre - cb.ordre
+  })
+
   const handleDelete = async (insc: Inscription) => {
     const tempsNom = tempsById.get(insc.tempsId)?.nom ?? insc.tempsId
     const confirmed = window.confirm(
@@ -277,7 +285,7 @@ function StagiaireSection({
             </p>
           ) : (
             <div className="flex flex-col gap-2">
-              {inscriptions.map(insc => {
+              {sortedInscriptions.map(insc => {
                 const t = tempsById.get(insc.tempsId)
                 const c = creneauxById.get(insc.creneauId)
                 return (
