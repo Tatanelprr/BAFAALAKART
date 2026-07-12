@@ -203,6 +203,7 @@ export default function DashboardStagiaire() {
               <ObligationsChecklist
                 temps={temps}
                 coveredTempsIds={new Set(inscriptions.map(i => i.tempsId))}
+                occupiedCreneaux={Object.fromEntries(inscriptions.map(i => [i.creneauId, i.tempsId]))}
                 typeStagiaire={typeStagiaire}
               />
             </TabsContent>

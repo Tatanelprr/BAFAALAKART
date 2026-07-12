@@ -97,6 +97,21 @@ export function OnboardingWizard({
   const coveredCount = coveredTopics.size
   const allCovered = totalTopics === 0 || coveredCount >= totalTopics
 
+  // Détecte si un topic obligatoire est inaccessible (tous ses créneaux pris par un autre temps)
+  const selectedIds = new Set(Object.values(selections))
+  const anyImpossible = useMemo(() => {
+    return Object.entries(mandatoryTopics).some(([, ids]) => {
+      if (ids.some(id => selectedIds.has(id))) return false
+      return ids.every(id => {
+        const t = temps.find(t => t.id === id)
+        if (!t) return true
+        const occupying = selections[t.creneauId]
+        return occupying !== undefined && occupying !== id
+      })
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mandatoryTopics, selections, temps])
+
   // Creneaux already inscribed in Firestore
   const existingByCreneauId = useMemo(() => {
     const map: Record<string, Inscription> = {}
@@ -211,6 +226,7 @@ export function OnboardingWizard({
         <ObligationsChecklist
           temps={temps}
           coveredTempsIds={new Set(Object.values(selections))}
+          occupiedCreneaux={selections}
           typeStagiaire={typeStagiaire}
         />
 
@@ -314,7 +330,12 @@ export function OnboardingWizard({
         {error && (
           <p className="text-xs text-destructive">{error}</p>
         )}
-        {!allCovered && (
+        {anyImpossible && (
+          <p className="text-xs text-red-600 font-medium">
+            Un temps obligatoire n&apos;est plus accessible — modifie tes choix.
+          </p>
+        )}
+        {!allCovered && !anyImpossible && (
           <p className="text-xs text-amber-600">
             {totalTopics - coveredCount} temps bleu
             {totalTopics - coveredCount > 1 ? 's' : ''} obligatoire
@@ -323,7 +344,7 @@ export function OnboardingWizard({
         )}
         <Button
           onClick={handleSubmit}
-          disabled={!allCovered || saving}
+          disabled={!allCovered || anyImpossible || saving}
           className="w-full"
         >
           {saving ? 'Enregistrement…' : 'Valider mon planning'}
