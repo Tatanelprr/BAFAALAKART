@@ -124,23 +124,37 @@ export function OnboardingWizard({
     if (existing?.verrouille) return
 
     const t = temps.find(t => t.id === tempsId)
-    if (t?.type === 'violet' && t.atelierId) {
-      // Auto-sélectionner tous les créneaux de l'atelier
-      const tempsAtelier = temps.filter(
-        at => at.atelierId === t.atelierId && at.type === 'violet'
-      )
-      setSelections(prev => {
-        const next = { ...prev }
-        tempsAtelier.forEach(at => {
-          if (!existingByCreneauId[at.creneauId]?.verrouille) {
-            next[at.creneauId] = at.id
-          }
-        })
-        return next
-      })
-    } else {
-      setSelections(prev => ({ ...prev, [creneauId]: tempsId }))
-    }
+
+    setSelections(prev => {
+      const next = { ...prev }
+
+      // Si le créneau avait une sélection violette → décocher tout l'atelier d'abord
+      const currentTempsId = next[creneauId]
+      if (currentTempsId) {
+        const currentTemps = temps.find(t => t.id === currentTempsId)
+        if (currentTemps?.type === 'violet' && currentTemps.atelierId) {
+          temps
+            .filter(at => at.atelierId === currentTemps.atelierId && at.type === 'violet')
+            .forEach(at => { delete next[at.creneauId] })
+        }
+      }
+
+      // Appliquer la nouvelle sélection
+      if (t?.type === 'violet' && t.atelierId) {
+        // Auto-sélectionner tous les créneaux de l'atelier
+        temps
+          .filter(at => at.atelierId === t.atelierId && at.type === 'violet')
+          .forEach(at => {
+            if (!existingByCreneauId[at.creneauId]?.verrouille) {
+              next[at.creneauId] = at.id
+            }
+          })
+      } else {
+        next[creneauId] = tempsId
+      }
+
+      return next
+    })
   }
 
   const handleSubmit = async () => {
