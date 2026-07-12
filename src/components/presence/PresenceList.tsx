@@ -24,6 +24,7 @@ export function PresenceList({
   onAnnuler,
 }: PresenceListProps) {
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set())
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   if (inscriptions.length === 0) {
     return (
@@ -39,12 +40,22 @@ export function PresenceList({
     estPresent: boolean
   ) => {
     setLoadingIds(prev => new Set(prev).add(stagiaireId))
+    setErrors(prev => { const next = { ...prev }; delete next[stagiaireId]; return next })
     try {
       if (estPresent) {
         await onAnnuler(stagiaireId)
       } else {
         await onValider(stagiaireId, inscriptionId)
       }
+    } catch (err: unknown) {
+      console.error('Erreur présence:', err)
+      const message = err instanceof Error ? err.message : String(err)
+      setErrors(prev => ({
+        ...prev,
+        [stagiaireId]: message.includes('permission')
+          ? 'Permission refusée. Vérifie ton rôle.'
+          : `Erreur : ${message}`,
+      }))
     } finally {
       setLoadingIds(prev => {
         const next = new Set(prev)
@@ -94,6 +105,11 @@ export function PresenceList({
               {estPresent && presence && (
                 <p className="text-xs text-green-600 mt-0.5">
                   Validé à {formatHeure(presence.dateValidation?.toDate?.())}
+                </p>
+              )}
+              {errors[insc.stagiaireId] && (
+                <p className="text-xs text-destructive mt-0.5">
+                  {errors[insc.stagiaireId]}
                 </p>
               )}
             </div>
