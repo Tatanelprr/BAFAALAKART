@@ -10,9 +10,12 @@ import { InscriptionsManager } from '@/components/admin/InscriptionsManager'
 import { ImportPanel } from '@/components/admin/ImportPanel'
 import { ExportPanel } from '@/components/admin/ExportPanel'
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog'
+import { BleuConfigPanel } from '@/components/admin/BleuConfigPanel'
+import { useTemps } from '@/hooks/useTemps'
 
 export default function DashboardAdmin() {
   const { currentUser, logout } = useAuth()
+  const { temps, creneaux } = useTemps()
   const router = useRouter()
 
   const handleLogout = async () => {
@@ -53,6 +56,7 @@ export default function DashboardAdmin() {
           <TabsList className="mb-6 flex-wrap h-auto gap-1">
             <TabsTrigger value="utilisateurs">Utilisateurs</TabsTrigger>
             <TabsTrigger value="temps">Temps</TabsTrigger>
+            <TabsTrigger value="bleus">Config. bleus</TabsTrigger>
             <TabsTrigger value="inscriptions">Inscriptions</TabsTrigger>
             <TabsTrigger value="import">Import</TabsTrigger>
             <TabsTrigger value="export">Export</TabsTrigger>
@@ -64,6 +68,10 @@ export default function DashboardAdmin() {
 
           <TabsContent value="temps">
             <TempsManager />
+          </TabsContent>
+
+          <TabsContent value="bleus">
+            <BleuConfigPanel temps={temps} creneaux={creneaux} />
           </TabsContent>
 
           <TabsContent value="inscriptions">
