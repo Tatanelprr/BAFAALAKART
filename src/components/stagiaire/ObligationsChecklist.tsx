@@ -47,7 +47,10 @@ export function ObligationsChecklist({ temps, coveredTempsIds, typeStagiaire }: 
         .filter((t): t is Temps => Boolean(t))
       const uniqueNoms = [...new Set(tempsInGroup.map(t => t.nom))]
       const isGroup = uniqueNoms.length > 1
-      const label = isGroup ? commonPrefix(uniqueNoms) || key : (uniqueNoms[0] ?? key)
+      const libelleGroupe = tempsInGroup.find(t => t.libelleGroupe)?.libelleGroupe
+      const label = isGroup
+        ? (libelleGroupe ?? commonPrefix(uniqueNoms) ?? key)
+        : (uniqueNoms[0] ?? key)
       const covered = ids.some(id => coveredTempsIds.has(id))
 
       return {
