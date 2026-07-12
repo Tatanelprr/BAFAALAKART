@@ -68,6 +68,7 @@ export default function DashboardFormateur() {
   const [selectedTempsId, setSelectedTempsId] = useState<string>('')
   const [stagiaires, setStagiaires] = useState<User[]>([])
   const [loadingStagiaires, setLoadingStagiaires] = useState(true)
+  const [appelError, setAppelError] = useState<string | null>(null)
 
   // Load stagiaires once
   useEffect(() => {
@@ -111,12 +112,36 @@ export default function DashboardFormateur() {
 
   const handleValider = async (stagiaireId: string, inscriptionId: string) => {
     if (!currentUser || !selectedTempsId) return
-    await validerPresence(stagiaireId, selectedTempsId, currentUser.uid, inscriptionId)
+    setAppelError(null)
+    try {
+      await validerPresence(stagiaireId, selectedTempsId, currentUser.uid, inscriptionId)
+    } catch (err: unknown) {
+      console.error('Erreur validation présence:', err)
+      const message = err instanceof Error ? err.message : String(err)
+      setAppelError(
+        message.includes('permission')
+          ? 'Permission refusée. Vérifie que ton compte a bien le rôle formateur.'
+          : `Erreur lors de la validation : ${message}`
+      )
+      throw err // re-throw pour que PresenceList affiche l'erreur au bon stagiaire
+    }
   }
 
   const handleAnnuler = async (stagiaireId: string) => {
     if (!currentUser || !selectedTempsId) return
-    await annulerPresence(stagiaireId, selectedTempsId, currentUser.uid)
+    setAppelError(null)
+    try {
+      await annulerPresence(stagiaireId, selectedTempsId, currentUser.uid)
+    } catch (err: unknown) {
+      console.error('Erreur annulation présence:', err)
+      const message = err instanceof Error ? err.message : String(err)
+      setAppelError(
+        message.includes('permission')
+          ? 'Permission refusée. Vérifie que ton compte a bien le rôle formateur.'
+          : `Erreur lors de l'annulation : ${message}`
+      )
+      throw err
+    }
   }
 
   if (!currentUser) {
@@ -266,6 +291,14 @@ export default function DashboardFormateur() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Erreur globale appel */}
+            {appelError && (
+              <div className="mb-3 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive flex items-start justify-between gap-2">
+                <span>{appelError}</span>
+                <button onClick={() => setAppelError(null)} className="shrink-0 font-medium hover:underline" aria-label="Fermer">✕</button>
+              </div>
+            )}
 
             {/* Liste des présences */}
             {!selectedTempsId ? (
