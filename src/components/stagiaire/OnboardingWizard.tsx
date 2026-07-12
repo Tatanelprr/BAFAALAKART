@@ -160,40 +160,54 @@ export function OnboardingWizard({
   const handleSubmit = async () => {
     setSaving(true)
     setError(null)
-    // Track creneaux bookés dans CE batch (pour éviter double-booking des ateliers multi-créneau)
     const bookedInBatch = new Set<string>()
 
     try {
+      // === PASSE 1 : ateliers (violet multi-créneaux) ===
+      // Traités en premier pour libérer tous leurs créneaux avant inscrireAtelier
+      const processedAteliers = new Set<string>()
+      for (const tempsId of Object.values(selections)) {
+        const t = temps.find(t => t.id === tempsId)
+        if (!t || t.type !== 'violet' || !t.atelierId) continue
+        if (processedAteliers.has(t.atelierId)) continue
+        processedAteliers.add(t.atelierId)
+
+        const tempsAtelier = temps.filter(at => at.atelierId === t.atelierId && at.type === 'violet')
+
+        // Déjà inscrit à tous les créneaux de cet atelier → skip
+        const dejaInscrit = tempsAtelier.every(at => existingByCreneauId[at.creneauId]?.tempsId === at.id)
+        if (dejaInscrit) {
+          tempsAtelier.forEach(at => bookedInBatch.add(at.creneauId))
+          continue
+        }
+
+        // Libérer les créneaux occupés par d'autres temps avant inscrireAtelier
+        for (const at of tempsAtelier) {
+          const existing = existingByCreneauId[at.creneauId]
+          if (existing && !existing.verrouille && existing.tempsId !== at.id) {
+            await desinscrire(existing.id, stagiaireId, at.creneauId)
+          }
+          bookedInBatch.add(at.creneauId)
+        }
+
+        await inscrireAtelier(stagiaireId, t.atelierId)
+      }
+
+      // === PASSE 2 : temps non-violet ===
       for (const [creneauId, tempsId] of Object.entries(selections)) {
-        // Sauter uniquement si bookés PAR CE batch (ex. atelier), pas les inscriptions Firestore
         if (bookedInBatch.has(creneauId)) continue
 
         const existing = existingByCreneauId[creneauId]
-
         if (existing) {
-          if (existing.tempsId === tempsId) {
-            // Aucun changement
-            continue
-          }
-          if (existing.verrouille) {
-            // Verrouillée, on ne touche pas
-            continue
-          }
-          // Sélection modifiée : on remplace
+          if (existing.tempsId === tempsId) continue
+          if (existing.verrouille) continue
           await desinscrire(existing.id, stagiaireId, creneauId)
         }
 
         const t = temps.find(t => t.id === tempsId)
         if (!t) continue
-        if (t.type === 'violet' && t.atelierId) {
-          await inscrireAtelier(stagiaireId, t.atelierId)
-          temps
-            .filter(at => at.atelierId === t.atelierId && at.type === 'violet')
-            .forEach(at => bookedInBatch.add(at.creneauId))
-        } else {
-          await inscrire(stagiaireId, tempsId, creneauId)
-          bookedInBatch.add(creneauId)
-        }
+        await inscrire(stagiaireId, tempsId, creneauId)
+        bookedInBatch.add(creneauId)
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
