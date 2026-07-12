@@ -59,17 +59,19 @@ service cloud.firestore {
 
     // ─── inscriptions ──────────────────────────────────────────────
     match /inscriptions/{docId} {
-      // Lecture : stagiaire (ses propres), formateur, admin
-      allow read: if isFormateur() || (isStagiaire() && resource.data.stagiaireId == request.auth.uid);
-      // Création : stagiaire pour soi-même (non verrouillé) ou admin
+      // Lecture : tout utilisateur authentifié
+      // (isAuth() évite getRole() dans les transactions Firestore)
+      allow read: if isAuth();
+
+      // Création : stagiaire pour soi-même (verrouillé ou non) ou admin
+      // Note: verrouille==true est nécessaire pour inscrireAtelier
       allow create: if isAdmin() ||
-        (isStagiaire() &&
-         request.resource.data.stagiaireId == request.auth.uid &&
-         request.resource.data.verrouille == false);
-      // Mise à jour : admin seulement (le verrouillage est géré par le service)
+        (isAuth() && request.resource.data.stagiaireId == request.auth.uid);
+
+      // Mise à jour : admin ou formateur
       allow update: if isAdmin() || isFormateur();
-      // Suppression : admin, ou propriétaire de l'inscription non verrouillée
-      // (isAuth() au lieu de isStagiaire() pour éviter le get() imbriqué en transaction)
+
+      // Suppression : admin ou propriétaire non verrouillée
       allow delete: if isAdmin() ||
         (isAuth() &&
          resource.data.stagiaireId == request.auth.uid &&
