@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { Temps, Creneau } from '@/types'
 import { updateTemps } from '@/services/temps'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -36,17 +36,21 @@ interface Props {
 
 export function BleuConfigPanel({ temps, creneaux }: Props) {
   const bleus = temps.filter(t => t.type === 'bleu')
-  const [rows, setRows] = useState<Record<string, RowState>>({})
 
-  useEffect(() => {
-    const init: Record<string, RowState> = {}
-    bleus.forEach(t => { init[t.id] = initRow(t) })
-    setRows(init)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [temps])
+  // Edits locaux (l'utilisateur modifie les champs avant de sauvegarder)
+  const [edits, setEdits] = useState<Record<string, Partial<RowState>>>({})
+
+  // Etat final = base Firestore + edits locaux
+  const rows = useMemo<Record<string, RowState>>(() => {
+    const result: Record<string, RowState> = {}
+    bleus.forEach(t => {
+      result[t.id] = { ...initRow(t), ...edits[t.id] }
+    })
+    return result
+  }, [bleus, edits])
 
   const setRow = (id: string, patch: Partial<RowState>) =>
-    setRows(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }))
+    setEdits(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }))
 
   const handleSave = async (t: Temps) => {
     const row = rows[t.id]
@@ -81,7 +85,7 @@ export function BleuConfigPanel({ temps, creneaux }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-muted-foreground">
-        Configure les obligations et les groupes "1 parmi" pour chaque temps bleu.
+        Configure les obligations et les groupes &quot;1 parmi&quot; pour chaque temps bleu.
       </p>
 
       {bleus.map(t => {
