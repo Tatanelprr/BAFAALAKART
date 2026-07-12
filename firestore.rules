@@ -68,8 +68,11 @@ service cloud.firestore {
          request.resource.data.verrouille == false);
       // Mise à jour : admin seulement (le verrouillage est géré par le service)
       allow update: if isAdmin() || isFormateur();
-      // Suppression : admin seulement
-      allow delete: if isAdmin();
+      // Suppression : admin, ou stagiaire pour ses propres inscriptions non verrouillées
+      allow delete: if isAdmin() ||
+        (isStagiaire() &&
+         resource.data.stagiaireId == request.auth.uid &&
+         resource.data.verrouille == false);
     }
 
     // ─── slots (contrainte unicité créneau) ────────────────────────

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Creneau, Temps, Atelier, Inscription, TypeStagiaire } from '@/types'
 import { inscrire, inscrireAtelier, desinscrire } from '@/services/inscriptions'
 import { getTempsVisiblesParStagiaire } from '@/lib/utils/planning'
@@ -46,13 +46,33 @@ export function OnboardingWizard({
   stagiaireId,
   typeStagiaire,
 }: Props) {
+  // Initialiser avec les verrouillées (ateliers) uniquement — les non-verrouillées seront supprimées
   const [selections, setSelections] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {}
-    inscriptions.forEach(i => { init[i.creneauId] = i.tempsId })
+    inscriptions.filter(i => i.verrouille).forEach(i => { init[i.creneauId] = i.tempsId })
     return init
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // resetting = true si des inscriptions non-verrouillées existent (seront supprimées au montage)
+  const [resetting, setResetting] = useState(() => inscriptions.some(i => !i.verrouille))
+
+  // Au montage : supprimer les inscriptions non verrouillées pour repartir propre
+  const hasReset = useRef(false)
+  useEffect(() => {
+    if (hasReset.current) return
+    hasReset.current = true
+
+    const nonVerrouillees = inscriptions.filter(i => !i.verrouille)
+    if (nonVerrouillees.length === 0) return
+
+    Promise.all(
+      nonVerrouillees.map(i => desinscrire(i.id, stagiaireId, i.creneauId))
+    )
+      .catch(console.error)
+      .finally(() => setResetting(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Creneaux grouped by jour, sorted
   const creneauxParJour = useMemo(() => {
@@ -160,12 +180,13 @@ export function OnboardingWizard({
   const handleSubmit = async () => {
     setSaving(true)
     setError(null)
+    // Creneaux traités dans ce batch (pour éviter double-booking)
     const bookedInBatch = new Set<string>()
 
     try {
       // === PASSE 1 : ateliers (violet multi-créneaux) ===
-      // Traités en premier pour libérer tous leurs créneaux avant inscrireAtelier
       const processedAteliers = new Set<string>()
+
       for (const tempsId of Object.values(selections)) {
         const t = temps.find(t => t.id === tempsId)
         if (!t || t.type !== 'violet' || !t.atelierId) continue
@@ -174,33 +195,51 @@ export function OnboardingWizard({
 
         const tempsAtelier = temps.filter(at => at.atelierId === t.atelierId && at.type === 'violet')
 
-        // Déjà inscrit à tous les créneaux de cet atelier → skip
-        const dejaInscrit = tempsAtelier.every(at => existingByCreneauId[at.creneauId]?.tempsId === at.id)
-        if (dejaInscrit) {
+        // Vérifier créneau par créneau
+        const tousInscrits = tempsAtelier.every(at => existingByCreneauId[at.creneauId]?.tempsId === at.id)
+        if (tousInscrits) {
           tempsAtelier.forEach(at => bookedInBatch.add(at.creneauId))
           continue
         }
 
-        // Libérer les créneaux occupés par d'autres temps avant inscrireAtelier
+        // Savoir si certains creneaux ont déjà le bon temps (déjà verrouillés)
+        const certainsDejaInscrits = tempsAtelier.some(at => existingByCreneauId[at.creneauId]?.tempsId === at.id)
+
+        // Libérer les creneaux qui ont un AUTRE temps (non verrouillé)
         for (const at of tempsAtelier) {
           const existing = existingByCreneauId[at.creneauId]
-          if (existing && !existing.verrouille && existing.tempsId !== at.id) {
+          if (existing && existing.tempsId !== at.id && !existing.verrouille) {
             await desinscrire(existing.id, stagiaireId, at.creneauId)
           }
-          bookedInBatch.add(at.creneauId)
         }
 
-        await inscrireAtelier(stagiaireId, t.atelierId)
+        if (certainsDejaInscrits) {
+          // Atelier partiellement inscrit : on inscrit créneau par créneau les manquants
+          // (inscrireAtelier vérifie tous les slots atomiquement, ça échouerait)
+          for (const at of tempsAtelier) {
+            const existing = existingByCreneauId[at.creneauId]
+            if (existing?.tempsId === at.id) {
+              // Déjà bon
+            } else if (!existing || !existing.verrouille) {
+              await inscrire(stagiaireId, at.id, at.creneauId)
+            }
+            bookedInBatch.add(at.creneauId)
+          }
+        } else {
+          // Tous les creneaux sont libres : inscrireAtelier atomique
+          await inscrireAtelier(stagiaireId, t.atelierId)
+          tempsAtelier.forEach(at => bookedInBatch.add(at.creneauId))
+        }
       }
 
-      // === PASSE 2 : temps non-violet ===
+      // === PASSE 2 : temps orange / bleu / sans_formation ===
       for (const [creneauId, tempsId] of Object.entries(selections)) {
         if (bookedInBatch.has(creneauId)) continue
 
         const existing = existingByCreneauId[creneauId]
         if (existing) {
-          if (existing.tempsId === tempsId) continue
-          if (existing.verrouille) continue
+          if (existing.tempsId === tempsId) continue   // déjà bon
+          if (existing.verrouille) continue            // verrouillé, on ne touche pas
           await desinscrire(existing.id, stagiaireId, creneauId)
         }
 
@@ -210,17 +249,30 @@ export function OnboardingWizard({
         bookedInBatch.add(creneauId)
       }
     } catch (err: unknown) {
+      console.error('Wizard submit error:', err)
       const message = err instanceof Error ? err.message : String(err)
       if (message === 'CRENEAU_OCCUPE') {
         setError('Un créneau est déjà occupé. Rafraîchis la page et réessaie.')
       } else if (message === 'CONFLIT_ATELIER') {
-        setError("Un atelier entre en conflit avec une inscription existante.")
+        setError("Un atelier entre en conflit avec une inscription. Rafraîchis la page et réessaie.")
+      } else if (message === 'ATELIER_VIDE') {
+        setError("L'atelier sélectionné n'a pas de temps associés. Contacte un admin.")
+      } else if (message === 'INSCRIPTION_VERROUILEE') {
+        setError("Une inscription verrouillée empêche la modification. Contacte un formateur.")
       } else {
-        setError("Une erreur est survenue. Réessaie.")
+        setError(`Erreur : ${message}`)
       }
     } finally {
       setSaving(false)
     }
+  }
+
+  if (resetting) {
+    return (
+      <div className="py-12 text-center text-muted-foreground text-sm">
+        Réinitialisation du planning…
+      </div>
+    )
   }
 
   return (
