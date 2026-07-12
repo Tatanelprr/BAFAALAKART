@@ -252,15 +252,15 @@ export function OnboardingWizard({
       console.error('Wizard submit error:', err)
       const message = err instanceof Error ? err.message : String(err)
       if (message === 'CRENEAU_OCCUPE') {
-        setError('Un créneau est déjà occupé. Rafraîchis la page et réessaie.')
+        setError('Un créneau est déjà réservé par quelqu\'un d\'autre. Rafraîchis la page et réessaie.')
       } else if (message === 'CONFLIT_ATELIER') {
-        setError("Un atelier entre en conflit avec une inscription. Rafraîchis la page et réessaie.")
+        setError("L'atelier que tu as choisi se déroule sur un créneau déjà réservé. Change un de tes choix.")
       } else if (message === 'ATELIER_VIDE') {
-        setError("L'atelier sélectionné n'a pas de temps associés. Contacte un admin.")
+        setError("L'atelier sélectionné n'a pas de sessions configurées. Contacte un formateur ou un admin.")
       } else if (message === 'INSCRIPTION_VERROUILEE') {
-        setError("Une inscription verrouillée empêche la modification. Contacte un formateur.")
+        setError("Une inscription verrouillée bloque la modification. Contacte un formateur.")
       } else {
-        setError(`Erreur : ${message}`)
+        setError(`Erreur lors de l'envoi : ${message}. Rafraîchis la page et réessaie, ou contacte un admin si le problème persiste.`)
       }
     } finally {
       setSaving(false)

@@ -54,13 +54,16 @@ export default function DashboardStagiaire() {
         await inscrire(uid, tempsId, creneauId)
       }
     } catch (err: unknown) {
+      console.error('handleInscrire:', err)
       const message = err instanceof Error ? err.message : String(err)
       if (message === 'CRENEAU_OCCUPE') {
-        setError('Ce créneau est déjà occupé par une autre activité.')
+        setError('Tu es déjà inscrit(e) à un autre temps sur ce créneau.')
       } else if (message === 'CONFLIT_ATELIER') {
-        setError("Cet atelier entre en conflit avec une de vos inscriptions existantes.")
+        setError("Cet atelier se déroule sur un créneau que tu as déjà réservé.")
+      } else if (message === 'ATELIER_VIDE') {
+        setError("Cet atelier n'a pas de sessions configurées. Contacte un formateur.")
       } else {
-        setError("Une erreur est survenue lors de l'inscription.")
+        setError(`Inscription impossible : ${message}. Rafraîchis la page et réessaie.`)
       }
     }
   }
@@ -77,15 +80,16 @@ export default function DashboardStagiaire() {
         await inscrire(uid, newTempsId, creneauId)
       }
     } catch (err: unknown) {
+      console.error('handleChanger:', err)
       const message = err instanceof Error ? err.message : String(err)
       if (message === 'INSCRIPTION_VERROUILEE') {
-        setError("Cette inscription est verrouillée et ne peut pas être modifiée.")
+        setError("Cette inscription est verrouillée par un formateur et ne peut pas être modifiée.")
       } else if (message === 'CRENEAU_OCCUPE') {
-        setError('Ce créneau est déjà occupé.')
+        setError('Ce créneau est déjà occupé. Rafraîchis la page et réessaie.')
       } else if (message === 'CONFLIT_ATELIER') {
-        setError("Cet atelier entre en conflit avec une inscription existante.")
+        setError("Cet atelier entre en conflit avec l'un de tes créneaux déjà réservés.")
       } else {
-        setError("Une erreur est survenue lors du changement.")
+        setError(`Changement impossible : ${message}. Rafraîchis la page et réessaie.`)
       }
     }
   }
