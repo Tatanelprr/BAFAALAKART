@@ -15,28 +15,14 @@ const makeTemps = (overrides: Partial<Temps>): Temps => ({
 })
 
 describe('getTempsVisiblesParStagiaire', () => {
-  it('inclut temps bleu obligatoireBase pour stagiaire Base', () => {
-    const temps = [makeTemps({ obligatoireBase: true, obligatoireAppro: false })]
-    const result = getTempsVisiblesParStagiaire(temps, 'Base')
-    expect(result).toHaveLength(1)
-  })
-
-  it('exclut temps bleu non obligatoireBase pour stagiaire Base', () => {
-    const temps = [makeTemps({ obligatoireBase: false, obligatoireAppro: true })]
-    const result = getTempsVisiblesParStagiaire(temps, 'Base')
-    expect(result).toHaveLength(0)
-  })
-
-  it('inclut temps bleu obligatoireAppro pour stagiaire Approfondissement', () => {
-    const temps = [makeTemps({ obligatoireBase: false, obligatoireAppro: true })]
-    const result = getTempsVisiblesParStagiaire(temps, 'Approfondissement')
-    expect(result).toHaveLength(1)
-  })
-
-  it('inclut temps bleu pour les deux si les deux obligatoires', () => {
-    const temps = [makeTemps({ obligatoireBase: true, obligatoireAppro: true })]
-    expect(getTempsVisiblesParStagiaire(temps, 'Base')).toHaveLength(1)
-    expect(getTempsVisiblesParStagiaire(temps, 'Approfondissement')).toHaveLength(1)
+  it('inclut tous les temps bleus, qu\'ils soient obligatoires ou non', () => {
+    const temps = [
+      makeTemps({ obligatoireBase: true, obligatoireAppro: false }),
+      makeTemps({ id: '2', obligatoireBase: false, obligatoireAppro: true }),
+      makeTemps({ id: '3', obligatoireBase: false, obligatoireAppro: false }),
+    ]
+    expect(getTempsVisiblesParStagiaire(temps, 'Base')).toHaveLength(3)
+    expect(getTempsVisiblesParStagiaire(temps, 'Approfondissement')).toHaveLength(3)
   })
 
   it('inclut toujours les temps orange, violet, sans_formation', () => {
