@@ -102,8 +102,26 @@ export function OnboardingWizard({
 
   const handleSelect = (creneauId: string, tempsId: string) => {
     const existing = existingByCreneauId[creneauId]
-    if (existing?.verrouille) return // inscription verrouillée, non modifiable
-    setSelections(prev => ({ ...prev, [creneauId]: tempsId }))
+    if (existing?.verrouille) return
+
+    const t = temps.find(t => t.id === tempsId)
+    if (t?.type === 'violet' && t.atelierId) {
+      // Auto-sélectionner tous les créneaux de l'atelier
+      const tempsAtelier = temps.filter(
+        at => at.atelierId === t.atelierId && at.type === 'violet'
+      )
+      setSelections(prev => {
+        const next = { ...prev }
+        tempsAtelier.forEach(at => {
+          if (!existingByCreneauId[at.creneauId]?.verrouille) {
+            next[at.creneauId] = at.id
+          }
+        })
+        return next
+      })
+    } else {
+      setSelections(prev => ({ ...prev, [creneauId]: tempsId }))
+    }
   }
 
   const handleSubmit = async () => {
