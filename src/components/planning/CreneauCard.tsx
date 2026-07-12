@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Creneau, Temps, Inscription, TypeStagiaire } from '@/types'
 import { getTempsVisiblesParStagiaire } from '@/lib/utils/planning'
-import { peutSInscrire, peutQuitter } from '@/lib/utils/inscriptions'
+import { peutSInscrire } from '@/lib/utils/inscriptions'
 import { TempsCard } from './TempsCard'
 
 interface CreneauCardProps {
@@ -14,7 +14,7 @@ interface CreneauCardProps {
   typeStagiaire: TypeStagiaire
   tempsCreneauMap: Record<string, string>
   onInscrire: (tempsId: string, creneauId: string) => Promise<void>
-  onDesinscrire: (inscriptionId: string, creneauId: string) => Promise<void>
+  onChanger: (inscriptionId: string, creneauId: string, newTempsId: string) => Promise<void>
 }
 
 export function CreneauCard({
@@ -25,7 +25,7 @@ export function CreneauCard({
   typeStagiaire,
   tempsCreneauMap,
   onInscrire,
-  onDesinscrire,
+  onChanger,
 }: CreneauCardProps) {
   const [loadingTempsId, setLoadingTempsId] = useState<string | null>(null)
 
@@ -36,6 +36,12 @@ export function CreneauCard({
 
   if (tempsVisibles.length === 0) return null
 
+  const inscriptionDuCreneau = inscriptions.find(
+    i => i.creneauId === creneau.id && i.stagiaireId === stagiaireId
+  )
+  const creneauOccupe = Boolean(inscriptionDuCreneau)
+  const verrouilleDuCreneau = inscriptionDuCreneau?.verrouille ?? false
+
   const handleInscrire = async (tempsId: string) => {
     setLoadingTempsId(tempsId)
     try {
@@ -45,10 +51,11 @@ export function CreneauCard({
     }
   }
 
-  const handleDesinscrire = async (inscription: Inscription) => {
-    setLoadingTempsId(inscription.tempsId)
+  const handleChanger = async (newTempsId: string) => {
+    if (!inscriptionDuCreneau || verrouilleDuCreneau) return
+    setLoadingTempsId(newTempsId)
     try {
-      await onDesinscrire(inscription.id, creneau.id)
+      await onChanger(inscriptionDuCreneau.id, creneau.id, newTempsId)
     } finally {
       setLoadingTempsId(null)
     }
@@ -76,17 +83,11 @@ export function CreneauCard({
               temps={temps}
               inscrit={inscrit}
               verrouille={verrouille}
+              creneauOccupe={creneauOccupe && !inscrit}
+              changerDisabled={verrouilleDuCreneau}
               loading={loadingTempsId === temps.id}
-              onInscrire={() => {
-                if (canJoin) {
-                  handleInscrire(temps.id)
-                }
-              }}
-              onDesinscrire={() => {
-                if (inscription && peutQuitter(inscription)) {
-                  handleDesinscrire(inscription)
-                }
-              }}
+              onInscrire={() => { if (canJoin) handleInscrire(temps.id) }}
+              onChanger={() => handleChanger(temps.id)}
             />
           )
         })}
