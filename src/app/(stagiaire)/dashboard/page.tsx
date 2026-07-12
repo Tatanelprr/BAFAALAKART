@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useTemps } from '@/hooks/useTemps'
 import { useInscriptions } from '@/hooks/useInscriptions'
@@ -9,10 +10,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PlanningView } from '@/components/planning/PlanningView'
+import { OnboardingWizard } from '@/components/stagiaire/OnboardingWizard'
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog'
 
 export default function DashboardStagiaire() {
-  const { currentUser } = useAuth()
+  const { currentUser, logout } = useAuth()
+  const router = useRouter()
   const { temps, creneaux, ateliers, loading: loadingTemps } = useTemps()
   const uid = currentUser?.uid ?? ''
   const { inscriptions, loading: loadingInscriptions } = useInscriptions(uid)
@@ -21,13 +24,17 @@ export default function DashboardStagiaire() {
 
   const typeStagiaire = currentUser?.typeStagiaire ?? 'Base'
 
-  // Build tempsCreneauMap: { [tempsId]: creneauId }
   const tempsCreneauMap = useMemo<Record<string, string>>(() => {
     return temps.reduce<Record<string, string>>((acc, t) => {
       acc[t.id] = t.creneauId
       return acc
     }, {})
   }, [temps])
+
+  const handleLogout = async () => {
+    await logout()
+    router.replace('/login')
+  }
 
   const handleInscrire = async (tempsId: string, creneauId: string) => {
     if (!uid) return
@@ -51,17 +58,27 @@ export default function DashboardStagiaire() {
     }
   }
 
-  const handleDesinscrire = async (inscriptionId: string, creneauId: string) => {
+  const handleChanger = async (inscriptionId: string, creneauId: string, newTempsId: string) => {
     if (!uid) return
     setError(null)
     try {
       await desinscrire(inscriptionId, uid, creneauId)
+      const tempsItem = temps.find(t => t.id === newTempsId)
+      if (tempsItem?.type === 'violet' && tempsItem.atelierId) {
+        await inscrireAtelier(uid, tempsItem.atelierId)
+      } else {
+        await inscrire(uid, newTempsId, creneauId)
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
       if (message === 'INSCRIPTION_VERROUILEE') {
-        setError("Cette inscription est verrouillée et ne peut pas être supprimée.")
+        setError("Cette inscription est verrouillée et ne peut pas être modifiée.")
+      } else if (message === 'CRENEAU_OCCUPE') {
+        setError('Ce créneau est déjà occupé.')
+      } else if (message === 'CONFLIT_ATELIER') {
+        setError("Cet atelier entre en conflit avec une inscription existante.")
       } else {
-        setError("Une erreur est survenue lors de la désinscription.")
+        setError("Une erreur est survenue lors du changement.")
       }
     }
   }
@@ -102,14 +119,15 @@ export default function DashboardStagiaire() {
             <span className="font-medium text-foreground">{typeStagiaire}</span>
           </p>
         </div>
-        <ChangePasswordDialog
-          identifiant={currentUser.identifiant}
-          trigger={
-            <Button variant="outline" size="sm" className="shrink-0 mt-1">
-              Mot de passe
-            </Button>
-          }
-        />
+        <div className="flex flex-col gap-1.5 items-end shrink-0 mt-1">
+          <ChangePasswordDialog
+            identifiant={currentUser.identifiant}
+            trigger={<Button variant="outline" size="sm">Mot de passe</Button>}
+          />
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            Déconnexion
+          </Button>
+        </div>
       </header>
 
       {/* Error alert */}
@@ -132,6 +150,15 @@ export default function DashboardStagiaire() {
           <div className="py-12 text-center text-muted-foreground text-sm">
             Chargement du planning…
           </div>
+        ) : inscriptions.length < creneaux.length ? (
+          <OnboardingWizard
+            creneaux={creneaux}
+            temps={temps}
+            ateliers={ateliers}
+            inscriptions={inscriptions}
+            stagiaireId={uid}
+            typeStagiaire={typeStagiaire}
+          />
         ) : (
           <Tabs defaultValue="planning">
             <TabsList className="w-full mb-4">
@@ -158,7 +185,7 @@ export default function DashboardStagiaire() {
                 typeStagiaire={typeStagiaire}
                 tempsCreneauMap={tempsCreneauMap}
                 onInscrire={handleInscrire}
-                onDesinscrire={handleDesinscrire}
+                onChanger={handleChanger}
               />
             </TabsContent>
 
@@ -170,15 +197,12 @@ export default function DashboardStagiaire() {
               ) : (
                 <div className="flex flex-col gap-3">
                   {mesAteliers.map(atelier => {
-                    // Find temps violet belonging to this atelier
                     const tempsAtelier = temps.filter(
                       t => t.type === 'violet' && t.atelierId === atelier.id
                     )
-                    // Find their creneaux
                     const creneauxAtelier = creneaux.filter(c =>
                       tempsAtelier.some(t => t.creneauId === c.id)
                     )
-
                     return (
                       <div
                         key={atelier.id}
@@ -226,7 +250,5 @@ const MOIS = [
 function formatJourCourt(isoDate: string): string {
   const [year, month, day] = isoDate.split('-').map(Number)
   const date = new Date(Date.UTC(year, month - 1, day))
-  const nomJour = JOURS_SEMAINE[date.getUTCDay()]
-  const nomMois = MOIS[date.getUTCMonth()]
-  return `${nomJour} ${date.getUTCDate()} ${nomMois}`
+  return `${JOURS_SEMAINE[date.getUTCDay()]} ${date.getUTCDate()} ${MOIS[date.getUTCMonth()]}`
 }

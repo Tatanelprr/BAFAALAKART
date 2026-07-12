@@ -12,7 +12,7 @@ interface PlanningViewProps {
   typeStagiaire: TypeStagiaire
   tempsCreneauMap: Record<string, string>
   onInscrire: (tempsId: string, creneauId: string) => Promise<void>
-  onDesinscrire: (inscriptionId: string, creneauId: string) => Promise<void>
+  onChanger: (inscriptionId: string, creneauId: string, newTempsId: string) => Promise<void>
 }
 
 const JOURS_SEMAINE = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
@@ -23,12 +23,10 @@ const MOIS = [
 
 function formatJour(isoDate: string): string {
   const [year, month, day] = isoDate.split('-').map(Number)
-  // Use UTC to avoid timezone shifting the date
   const date = new Date(Date.UTC(year, month - 1, day))
   const nomJour = JOURS_SEMAINE[date.getUTCDay()]
   const nomMois = MOIS[date.getUTCMonth()]
-  const nomJourCapitalized = nomJour.charAt(0).toUpperCase() + nomJour.slice(1)
-  return `${nomJourCapitalized} ${date.getUTCDate()} ${nomMois}`
+  return `${nomJour.charAt(0).toUpperCase()}${nomJour.slice(1)} ${date.getUTCDate()} ${nomMois}`
 }
 
 export function PlanningView({
@@ -40,13 +38,11 @@ export function PlanningView({
   typeStagiaire,
   tempsCreneauMap,
   onInscrire,
-  onDesinscrire,
+  onChanger,
 }: PlanningViewProps) {
-  // Group creneaux by jour
   const creneauxParJour = creneaux.reduce<Record<string, Creneau[]>>((acc, creneau) => {
-    const jour = creneau.jour
-    if (!acc[jour]) acc[jour] = []
-    acc[jour].push(creneau)
+    if (!acc[creneau.jour]) acc[creneau.jour] = []
+    acc[creneau.jour].push(creneau)
     return acc
   }, {})
 
@@ -82,7 +78,7 @@ export function PlanningView({
                 typeStagiaire={typeStagiaire}
                 tempsCreneauMap={tempsCreneauMap}
                 onInscrire={onInscrire}
-                onDesinscrire={onDesinscrire}
+                onChanger={onChanger}
               />
             ))}
           </div>
