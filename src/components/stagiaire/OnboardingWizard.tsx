@@ -67,15 +67,18 @@ export function OnboardingWizard({
 
   // Mandatory blue topics grouped by nom
   const mandatoryTopics = useMemo(() => {
-    const map: Record<string, string[]> = {} // nom → [tempsId, ...]
+    const map: Record<string, string[]> = {} // clé → [tempsId, ...]
     temps
       .filter(t =>
         t.type === 'bleu' &&
         (typeStagiaire === 'Base' ? t.obligatoireBase : t.obligatoireAppro)
       )
       .forEach(t => {
-        if (!map[t.nom]) map[t.nom] = []
-        map[t.nom].push(t.id)
+        // groupeBase/groupeAppro = "1 parmi ce groupe suffit"
+        const groupe = typeStagiaire === 'Base' ? t.groupeBase : t.groupeAppro
+        const key = groupe ?? t.nom
+        if (!map[key]) map[key] = []
+        map[key].push(t.id)
       })
     return map
   }, [temps, typeStagiaire])
