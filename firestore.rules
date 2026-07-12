@@ -68,9 +68,10 @@ service cloud.firestore {
          request.resource.data.verrouille == false);
       // Mise à jour : admin seulement (le verrouillage est géré par le service)
       allow update: if isAdmin() || isFormateur();
-      // Suppression : admin, ou stagiaire pour ses propres inscriptions non verrouillées
+      // Suppression : admin, ou propriétaire de l'inscription non verrouillée
+      // (isAuth() au lieu de isStagiaire() pour éviter le get() imbriqué en transaction)
       allow delete: if isAdmin() ||
-        (isStagiaire() &&
+        (isAuth() &&
          resource.data.stagiaireId == request.auth.uid &&
          resource.data.verrouille == false);
     }
