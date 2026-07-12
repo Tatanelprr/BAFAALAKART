@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { PresenceList } from '@/components/presence/PresenceList'
+import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog'
 import { User } from '@/types'
 
 // Session dates: 2026-07-12 → 2026-07-19
@@ -127,11 +128,21 @@ export default function DashboardFormateur() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
-      <header className="px-4 pt-6 pb-4 border-b bg-card">
-        <p className="text-xs text-muted-foreground mb-0.5">Formateur</p>
-        <h1 className="text-xl font-bold leading-tight">
-          {currentUser.prenom} {currentUser.nom}
-        </h1>
+      <header className="px-4 pt-6 pb-4 border-b bg-card flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs text-muted-foreground mb-0.5">Formateur</p>
+          <h1 className="text-xl font-bold leading-tight">
+            {currentUser.prenom} {currentUser.nom}
+          </h1>
+        </div>
+        <ChangePasswordDialog
+          identifiant={currentUser.identifiant}
+          trigger={
+            <Button variant="outline" size="sm">
+              Mot de passe
+            </Button>
+          }
+        />
       </header>
 
       {/* Day filter */}

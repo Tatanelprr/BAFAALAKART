@@ -7,7 +7,9 @@ import { useInscriptions } from '@/hooks/useInscriptions'
 import { inscrire, inscrireAtelier, desinscrire } from '@/services/inscriptions'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { PlanningView } from '@/components/planning/PlanningView'
+import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog'
 
 export default function DashboardStagiaire() {
   const { currentUser } = useAuth()
@@ -89,15 +91,25 @@ export default function DashboardStagiaire() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
-      <header className="px-4 pt-6 pb-4 border-b bg-card">
-        <p className="text-xs text-muted-foreground mb-0.5">Bonjour,</p>
-        <h1 className="text-xl font-bold leading-tight">
-          {currentUser.prenom} {currentUser.nom}
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          Groupe{' '}
-          <span className="font-medium text-foreground">{typeStagiaire}</span>
-        </p>
+      <header className="px-4 pt-6 pb-4 border-b bg-card flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs text-muted-foreground mb-0.5">Bonjour,</p>
+          <h1 className="text-xl font-bold leading-tight">
+            {currentUser.prenom} {currentUser.nom}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            Groupe{' '}
+            <span className="font-medium text-foreground">{typeStagiaire}</span>
+          </p>
+        </div>
+        <ChangePasswordDialog
+          identifiant={currentUser.identifiant}
+          trigger={
+            <Button variant="outline" size="sm" className="shrink-0 mt-1">
+              Mot de passe
+            </Button>
+          }
+        />
       </header>
 
       {/* Error alert */}

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore'
+import { collection, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { Temps, Creneau, Atelier } from '@/types'
 
@@ -25,23 +25,28 @@ export function useTemps(): UseTempsResult {
       if (loadedCount >= total) setLoading(false)
     }
 
-    const unsubTemps = onSnapshot(collection(db, 'temps'), snap => {
-      setTemps(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Temps))
-      checkLoaded()
-    })
-
-    const unsubCreneaux = onSnapshot(
-      query(collection(db, 'creneaux'), orderBy('jour'), orderBy('ordre')),
-      snap => {
-        setCreneaux(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Creneau))
-        checkLoaded()
-      }
+    const unsubTemps = onSnapshot(
+      collection(db, 'temps'),
+      snap => { setTemps(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Temps)); checkLoaded() },
+      err => { console.error('temps snapshot error:', err); checkLoaded() }
     )
 
-    const unsubAteliers = onSnapshot(collection(db, 'ateliers'), snap => {
-      setAteliers(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Atelier))
-      checkLoaded()
-    })
+    const unsubCreneaux = onSnapshot(
+      collection(db, 'creneaux'),
+      snap => {
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Creneau)
+        data.sort((a, b) => a.jour.localeCompare(b.jour) || a.ordre - b.ordre)
+        setCreneaux(data)
+        checkLoaded()
+      },
+      err => { console.error('creneaux snapshot error:', err); checkLoaded() }
+    )
+
+    const unsubAteliers = onSnapshot(
+      collection(db, 'ateliers'),
+      snap => { setAteliers(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Atelier)); checkLoaded() },
+      err => { console.error('ateliers snapshot error:', err); checkLoaded() }
+    )
 
     return () => {
       unsubTemps()

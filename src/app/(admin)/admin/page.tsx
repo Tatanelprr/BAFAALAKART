@@ -9,6 +9,7 @@ import { TempsManager } from '@/components/admin/TempsManager'
 import { InscriptionsManager } from '@/components/admin/InscriptionsManager'
 import { ImportPanel } from '@/components/admin/ImportPanel'
 import { ExportPanel } from '@/components/admin/ExportPanel'
+import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog'
 
 export default function DashboardAdmin() {
   const { currentUser, logout } = useAuth()
@@ -31,9 +32,19 @@ export default function DashboardAdmin() {
             {currentUser.prenom} {currentUser.nom}
           </h1>
         </div>
-        <Button variant="outline" size="sm" onClick={handleLogout}>
-          Déconnexion
-        </Button>
+        <div className="flex gap-2">
+          <ChangePasswordDialog
+            identifiant={currentUser.identifiant}
+            trigger={
+              <Button variant="outline" size="sm">
+                Mot de passe
+              </Button>
+            }
+          />
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            Déconnexion
+          </Button>
+        </div>
       </header>
 
       {/* Contenu principal */}
