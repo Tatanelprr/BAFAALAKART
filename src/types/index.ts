@@ -42,8 +42,9 @@ export interface Temps {
   obligatoireAppro: boolean
   atelierId?: string
   capaciteMin: number
-  groupeBase?: string   // si défini, 1 seul de ce groupe suffit pour Base
-  groupeAppro?: string  // si défini, 1 seul de ce groupe suffit pour Appro
+  groupeBase?: string      // si défini, 1 seul de ce groupe suffit pour Base
+  groupeAppro?: string     // si défini, 1 seul de ce groupe suffit pour Appro
+  libelleGroupe?: string   // libellé affiché dans la checklist pour ce groupe
 }
 
 export interface Atelier {

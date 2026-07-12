@@ -392,6 +392,7 @@ interface TempsFormState {
   capaciteMin: number
   groupeBase: string
   groupeAppro: string
+  libelleGroupe: string
 }
 
 function defaultTempsForm(): TempsFormState {
@@ -406,6 +407,7 @@ function defaultTempsForm(): TempsFormState {
     capaciteMin: 0,
     groupeBase: '',
     groupeAppro: '',
+    libelleGroupe: '',
   }
 }
 
@@ -434,6 +436,7 @@ function TempsDialog({
     capaciteMin: t.capaciteMin,
     groupeBase: t.groupeBase ?? '',
     groupeAppro: t.groupeAppro ?? '',
+    libelleGroupe: t.libelleGroupe ?? '',
   })
 
   const [form, setForm] = useState<TempsFormState>(
@@ -460,6 +463,7 @@ function TempsDialog({
         ...(form.type === 'violet' && form.atelierId ? { atelierId: form.atelierId } : {}),
         ...(form.groupeBase ? { groupeBase: form.groupeBase } : {}),
         ...(form.groupeAppro ? { groupeAppro: form.groupeAppro } : {}),
+        ...(form.libelleGroupe ? { libelleGroupe: form.libelleGroupe } : {}),
       }
       if (temps) {
         await updateTemps(temps.id, data)
@@ -582,6 +586,17 @@ function TempsDialog({
           {/* Groupes "1 parmi" (affiché si type = bleu) */}
           {isBleu && (
             <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Libellé du groupe (optionnel)</Label>
+                <Input
+                  value={form.libelleGroupe}
+                  onChange={e => setForm(f => ({ ...f, libelleGroupe: e.target.value }))}
+                  placeholder="ex: Connaissance de l'enfant"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Affiché dans la checklist à la place des noms individuels.
+                </p>
+              </div>
               <div className="flex flex-col gap-1.5">
                 <Label>Groupe Base (optionnel)</Label>
                 <Input
