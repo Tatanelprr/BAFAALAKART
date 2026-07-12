@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo } from 'react'
 import { Creneau, Temps, Atelier, Inscription, TypeStagiaire } from '@/types'
 import { inscrire, inscrireAtelier, desinscrire } from '@/services/inscriptions'
 import { getTempsVisiblesParStagiaire } from '@/lib/utils/planning'
@@ -46,33 +46,14 @@ export function OnboardingWizard({
   stagiaireId,
   typeStagiaire,
 }: Props) {
-  // Initialiser avec les verrouillées (ateliers) uniquement — les non-verrouillées seront supprimées
+  // Pré-remplir toutes les inscriptions existantes
   const [selections, setSelections] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {}
-    inscriptions.filter(i => i.verrouille).forEach(i => { init[i.creneauId] = i.tempsId })
+    inscriptions.forEach(i => { init[i.creneauId] = i.tempsId })
     return init
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // resetting = true si des inscriptions non-verrouillées existent (seront supprimées au montage)
-  const [resetting, setResetting] = useState(() => inscriptions.some(i => !i.verrouille))
-
-  // Au montage : supprimer les inscriptions non verrouillées pour repartir propre
-  const hasReset = useRef(false)
-  useEffect(() => {
-    if (hasReset.current) return
-    hasReset.current = true
-
-    const nonVerrouillees = inscriptions.filter(i => !i.verrouille)
-    if (nonVerrouillees.length === 0) return
-
-    Promise.all(
-      nonVerrouillees.map(i => desinscrire(i.id, stagiaireId, i.creneauId))
-    )
-      .catch(console.error)
-      .finally(() => setResetting(false))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   // Creneaux grouped by jour, sorted
   const creneauxParJour = useMemo(() => {
@@ -265,14 +246,6 @@ export function OnboardingWizard({
     } finally {
       setSaving(false)
     }
-  }
-
-  if (resetting) {
-    return (
-      <div className="py-12 text-center text-muted-foreground text-sm">
-        Réinitialisation du planning…
-      </div>
-    )
   }
 
   return (

@@ -1,13 +1,13 @@
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, orderBy, query } from 'firebase/firestore'
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { Creneau } from '@/types'
 
 type CreateCreneauData = Omit<Creneau, 'id'>
 
 export async function listCreneaux(): Promise<Creneau[]> {
-  const q = query(collection(db, 'creneaux'), orderBy('jour'), orderBy('ordre'))
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Creneau)
+  const snap = await getDocs(collection(db, 'creneaux'))
+  const data = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Creneau)
+  return data.sort((a, b) => a.jour.localeCompare(b.jour) || a.ordre - b.ordre)
 }
 
 export async function createCreneau(data: CreateCreneauData): Promise<string> {
