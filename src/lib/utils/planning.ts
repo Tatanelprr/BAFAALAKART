@@ -7,11 +7,8 @@ export function getCreneauxVisiblesParStagiaire(creneaux: Creneau[], typeStagiai
   return creneaux
 }
 
-export function getTempsVisiblesParStagiaire(temps: Temps[], typeStagiaire: TypeStagiaire): Temps[] {
-  return temps.filter(t => {
-    if (t.type !== 'bleu') return true
-    if (typeStagiaire === 'Base') return t.obligatoireBase
-    if (typeStagiaire === 'Approfondissement') return t.obligatoireAppro
-    return false
-  })
+export function getTempsVisiblesParStagiaire(temps: Temps[], _typeStagiaire: TypeStagiaire): Temps[] {
+  // Tous les temps sont proposés au choix, quelle que soit leur obligatoire.
+  // L'aspect obligatoire est géré uniquement par ObligationsChecklist et la validation du wizard.
+  return temps
 }
