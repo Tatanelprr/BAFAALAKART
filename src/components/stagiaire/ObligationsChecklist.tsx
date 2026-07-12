@@ -15,19 +15,20 @@ function commonPrefix(strings: string[]): string {
 interface ChecklistItem {
   key: string
   label: string
-  detail?: string   // "1 parmi : ..." pour les groupes
+  detail?: string
   covered: boolean
+  impossible: boolean  // non couvert ET tous ses créneaux sont pris par un autre temps
 }
 
 interface Props {
   temps: Temps[]
   coveredTempsIds: Set<string>
+  occupiedCreneaux: Record<string, string>  // creneauId → tempsId sélectionné/inscrit
   typeStagiaire: TypeStagiaire
 }
 
-export function ObligationsChecklist({ temps, coveredTempsIds, typeStagiaire }: Props) {
+export function ObligationsChecklist({ temps, coveredTempsIds, occupiedCreneaux, typeStagiaire }: Props) {
   const items = useMemo<ChecklistItem[]>(() => {
-    // Build mandatory topics map: key → [tempsId, ...]
     const map: Record<string, string[]> = {}
     temps
       .filter(t =>
@@ -53,17 +54,27 @@ export function ObligationsChecklist({ temps, coveredTempsIds, typeStagiaire }: 
         : (uniqueNoms[0] ?? key)
       const covered = ids.some(id => coveredTempsIds.has(id))
 
+      // Impossible : non couvert ET chaque occurrence a son créneau occupé par un autre temps
+      const impossible = !covered && ids.every(id => {
+        const t = temps.find(t => t.id === id)
+        if (!t) return true
+        const occupying = occupiedCreneaux[t.creneauId]
+        return occupying !== undefined && occupying !== id
+      })
+
       return {
         key,
         label,
         detail: isGroup ? `1 parmi : ${uniqueNoms.join(', ')}` : undefined,
         covered,
+        impossible,
       }
     })
-  }, [temps, coveredTempsIds, typeStagiaire])
+  }, [temps, coveredTempsIds, occupiedCreneaux, typeStagiaire])
 
   const coveredCount = items.filter(i => i.covered).length
   const total = items.length
+  const hasImpossible = items.some(i => i.impossible)
 
   if (total === 0) return null
 
@@ -72,7 +83,9 @@ export function ObligationsChecklist({ temps, coveredTempsIds, typeStagiaire }: 
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-semibold">Temps bleus obligatoires</p>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-          coveredCount === total
+          hasImpossible
+            ? 'bg-red-100 text-red-700'
+            : coveredCount === total
             ? 'bg-green-100 text-green-700'
             : 'bg-amber-100 text-amber-700'
         }`}>
@@ -85,15 +98,28 @@ export function ObligationsChecklist({ temps, coveredTempsIds, typeStagiaire }: 
             <span className={`mt-0.5 h-4 w-4 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold ${
               item.covered
                 ? 'bg-green-500 text-white'
+                : item.impossible
+                ? 'bg-red-500 text-white'
                 : 'border-2 border-slate-300'
             }`}>
-              {item.covered ? '✓' : ''}
+              {item.covered ? '✓' : item.impossible ? '!' : ''}
             </span>
             <div className="min-w-0">
-              <p className={`text-sm leading-snug ${item.covered ? 'text-muted-foreground line-through' : ''}`}>
+              <p className={`text-sm leading-snug ${
+                item.covered
+                  ? 'text-muted-foreground line-through'
+                  : item.impossible
+                  ? 'text-red-600 font-medium'
+                  : ''
+              }`}>
                 {item.label}
               </p>
-              {item.detail && (
+              {item.impossible && (
+                <p className="text-xs text-red-500 mt-0.5">
+                  Plus aucun créneau disponible pour ce temps.
+                </p>
+              )}
+              {!item.impossible && item.detail && (
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                   {item.detail}
                 </p>
