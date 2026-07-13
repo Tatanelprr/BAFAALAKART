@@ -23,6 +23,7 @@ export default function DashboardStagiaire() {
   const { inscriptions, loading: loadingInscriptions } = useInscriptions(uid)
 
   const [error, setError] = useState<string | null>(null)
+  const [isSwapping, setIsSwapping] = useState(false)
 
   const typeStagiaire = currentUser?.typeStagiaire ?? 'Base'
 
@@ -37,6 +38,19 @@ export default function DashboardStagiaire() {
       return acc
     }, {})
   }, [temps])
+
+  const allMandatoryBluesCovered = useMemo(() => {
+    const coveredIds = new Set(inscriptions.map(i => i.tempsId))
+    const covered: Record<string, boolean> = {}
+    temps
+      .filter(t => t.type === 'bleu' && (typeStagiaire === 'Base' ? t.obligatoireBase : t.obligatoireAppro))
+      .forEach(t => {
+        const key = (typeStagiaire === 'Base' ? t.groupeBase : t.groupeAppro) ?? t.nom
+        if (!covered[key]) covered[key] = false
+        if (coveredIds.has(t.id)) covered[key] = true
+      })
+    return Object.values(covered).every(Boolean)
+  }, [temps, inscriptions, typeStagiaire])
 
   const handleLogout = async () => {
     await logout()
@@ -71,6 +85,7 @@ export default function DashboardStagiaire() {
   const handleChanger = async (inscriptionId: string, creneauId: string, newTempsId: string) => {
     if (!uid) return
     setError(null)
+    setIsSwapping(true)
     try {
       await desinscrire(inscriptionId, uid, creneauId)
       const tempsItem = temps.find(t => t.id === newTempsId)
@@ -91,6 +106,8 @@ export default function DashboardStagiaire() {
       } else {
         setError(`Changement impossible : ${message}. Rafraîchis la page et réessaie.`)
       }
+    } finally {
+      setIsSwapping(false)
     }
   }
 
@@ -161,7 +178,7 @@ export default function DashboardStagiaire() {
           <div className="py-12 text-center text-muted-foreground text-sm">
             Chargement du planning…
           </div>
-        ) : inscriptions.length < creneauxVisibles.length ? (
+        ) : !isSwapping && (inscriptions.length < creneauxVisibles.length || !allMandatoryBluesCovered) ? (
           <OnboardingWizard
             creneaux={creneauxVisibles}
             temps={temps}

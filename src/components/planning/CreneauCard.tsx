@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Creneau, Temps, Inscription, TypeStagiaire } from '@/types'
-import { getTempsVisiblesParStagiaire, topicsNonCouvreesApresSwap } from '@/lib/utils/planning'
+import { getTempsVisiblesParStagiaire } from '@/lib/utils/planning'
 import { peutSInscrire } from '@/lib/utils/inscriptions'
 import { TempsCard } from './TempsCard'
 
@@ -28,7 +28,6 @@ export function CreneauCard({
   onChanger,
 }: CreneauCardProps) {
   const [loadingTempsId, setLoadingTempsId] = useState<string | null>(null)
-  const [swapWarning, setSwapWarning] = useState<{ tempsId: string; topics: string[] } | null>(null)
 
   const tempsVisibles = getTempsVisiblesParStagiaire(
     tempsListe.filter(t => t.creneauId === creneau.id),
@@ -54,20 +53,6 @@ export function CreneauCard({
 
   const handleChanger = async (newTempsId: string) => {
     if (!inscriptionDuCreneau || verrouilleDuCreneau) return
-
-    const topicsBloquees = topicsNonCouvreesApresSwap(
-      tempsListe,
-      inscriptions,
-      typeStagiaire,
-      inscriptionDuCreneau.tempsId,
-      newTempsId
-    )
-    if (topicsBloquees.length > 0) {
-      setSwapWarning({ tempsId: newTempsId, topics: topicsBloquees })
-      return
-    }
-
-    setSwapWarning(null)
     setLoadingTempsId(newTempsId)
     try {
       await onChanger(inscriptionDuCreneau.id, creneau.id, newTempsId)
@@ -92,10 +77,6 @@ export function CreneauCard({
           const verrouille = inscription?.verrouille ?? false
           const canJoin = peutSInscrire(stagiaireId, creneau.id, inscriptions, tempsCreneauMap)
 
-          const warning = swapWarning?.tempsId === temps.id
-            ? `Ce changement supprimerait des temps bleus obligatoires non couverts ailleurs : ${swapWarning.topics.join(', ')}.`
-            : undefined
-
           return (
             <TempsCard
               key={temps.id}
@@ -104,7 +85,6 @@ export function CreneauCard({
               verrouille={verrouille}
               creneauOccupe={creneauOccupe && !inscrit}
               changerDisabled={verrouilleDuCreneau}
-              changerWarning={warning}
               loading={loadingTempsId === temps.id}
               onInscrire={() => { if (canJoin) handleInscrire(temps.id) }}
               onChanger={() => handleChanger(temps.id)}
