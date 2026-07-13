@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
+import { X, AlertTriangle } from 'lucide-react'
 import { PresenceList } from '@/components/presence/PresenceList'
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog'
 import { User } from '@/types'
@@ -110,6 +110,12 @@ export default function DashboardFormateur() {
     }
     return map
   }, [inscriptions])
+
+  // Temps du jour avec moins de 4 inscrits
+  const tempsEnAlerte = useMemo(
+    () => tempsDuJour.filter(t => (countInscriptions[t.id] ?? 0) < 4),
+    [tempsDuJour, countInscriptions]
+  )
 
   const handleValider = async (stagiaireId: string, inscriptionId: string) => {
     if (!currentUser || !selectedTempsId) return
@@ -214,6 +220,23 @@ export default function DashboardFormateur() {
 
           {/* Onglet Temps */}
           <TabsContent value="temps">
+            {!loadingTemps && tempsEnAlerte.length > 0 && (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                  <p className="text-sm font-semibold text-red-700">
+                    {tempsEnAlerte.length} temps sous le minimum de participants
+                  </p>
+                </div>
+                <ul className="flex flex-col gap-0.5 pl-6">
+                  {tempsEnAlerte.map(t => (
+                    <li key={t.id} className="text-xs text-red-600">
+                      {t.nom} — {countInscriptions[t.id] ?? 0} inscrit{(countInscriptions[t.id] ?? 0) !== 1 ? 's' : ''}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {loadingTemps ? (
               <div className="py-12 text-center text-muted-foreground text-sm">
                 Chargement…
