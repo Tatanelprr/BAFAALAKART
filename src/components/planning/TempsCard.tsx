@@ -1,5 +1,6 @@
 'use client'
 
+import { Lock } from 'lucide-react'
 import { Temps } from '@/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -56,7 +57,7 @@ export function TempsCard({
             </Badge>
           )}
           {verrouille && inscrit && (
-            <span className="text-sm" title="Verrouillé">🔒</span>
+            <span title="Verrouillé"><Lock className="h-3.5 w-3.5 text-slate-400 shrink-0" /></span>
           )}
           {temps.type === 'bleu' && !inscrit && (
             <Badge className="bg-blue-100 text-blue-700 border-blue-300">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { Check, AlertTriangle } from 'lucide-react'
 import { Temps, TypeStagiaire } from '@/types'
 
 function commonPrefix(strings: string[]): string {
@@ -95,14 +96,18 @@ export function ObligationsChecklist({ temps, coveredTempsIds, occupiedCreneaux,
       <ul className="flex flex-col gap-2">
         {items.map(item => (
           <li key={item.key} className="flex items-start gap-2.5">
-            <span className={`mt-0.5 h-4 w-4 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold ${
+            <span className={`mt-0.5 h-4 w-4 shrink-0 rounded-full flex items-center justify-center ${
               item.covered
                 ? 'bg-green-500 text-white'
                 : item.impossible
                 ? 'bg-red-500 text-white'
                 : 'border-2 border-slate-300'
             }`}>
-              {item.covered ? '✓' : item.impossible ? '!' : ''}
+              {item.covered
+                ? <Check className="h-2.5 w-2.5" />
+                : item.impossible
+                ? <AlertTriangle className="h-2.5 w-2.5" />
+                : null}
             </span>
             <div className="min-w-0">
               <p className={`text-sm leading-snug ${
