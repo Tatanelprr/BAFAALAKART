@@ -10,6 +10,7 @@ interface TempsCardProps {
   verrouille: boolean
   creneauOccupe: boolean
   changerDisabled: boolean
+  changerWarning?: string
   onInscrire: () => void
   onChanger: () => void
   loading?: boolean
@@ -33,6 +34,7 @@ export function TempsCard({
   verrouille,
   creneauOccupe,
   changerDisabled,
+  changerWarning,
   onInscrire,
   onChanger,
   loading = false,
@@ -79,15 +81,20 @@ export function TempsCard({
       {!inscrit && (
         <div className="flex justify-end">
           {creneauOccupe ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onChanger}
-              disabled={changerDisabled || loading}
-              className="text-slate-700 border-slate-300 hover:bg-slate-100"
-            >
-              {loading ? 'Chargement…' : 'Changer de temps'}
-            </Button>
+            <div className="flex flex-col items-end gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onChanger}
+                disabled={changerDisabled || loading}
+                className="text-slate-700 border-slate-300 hover:bg-slate-100"
+              >
+                {loading ? 'Chargement…' : 'Changer de temps'}
+              </Button>
+              {changerWarning && (
+                <p className="text-xs text-red-600 max-w-[220px] text-right">{changerWarning}</p>
+              )}
+            </div>
           ) : (
             <Button
               size="sm"
