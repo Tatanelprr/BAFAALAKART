@@ -77,7 +77,9 @@ export default function DashboardStagiaire() {
       } else if (message === 'ATELIER_VIDE') {
         setError("Cet atelier n'a pas de sessions configurées. Contacte un formateur.")
       } else {
-        setError(`Inscription impossible : ${message}. Rafraîchis la page et réessaie.`)
+        const code = (err as { code?: string })?.code
+        const detail = code ? `${message} [${code}]` : message
+        setError(`Inscription impossible : ${detail}. Rafraîchis la page et réessaie.`)
       }
     }
   }
@@ -104,7 +106,9 @@ export default function DashboardStagiaire() {
       } else if (message === 'CONFLIT_ATELIER') {
         setError("Cet atelier entre en conflit avec l'un de tes créneaux déjà réservés.")
       } else {
-        setError(`Changement impossible : ${message}. Rafraîchis la page et réessaie.`)
+        const code = (err as { code?: string })?.code
+        const detail = code ? `${message} [${code}]` : message
+        setError(`Changement impossible : ${detail}. Rafraîchis la page et réessaie.`)
       }
     } finally {
       setIsSwapping(false)
