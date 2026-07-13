@@ -14,6 +14,7 @@ import { OnboardingWizard } from '@/components/stagiaire/OnboardingWizard'
 import { ObligationsChecklist } from '@/components/stagiaire/ObligationsChecklist'
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog'
 import { getCreneauxVisiblesParStagiaire } from '@/lib/utils/planning'
+import { X, Calendar } from 'lucide-react'
 
 export default function DashboardStagiaire() {
   const { currentUser, logout } = useAuth()
@@ -171,7 +172,7 @@ export default function DashboardStagiaire() {
             className="shrink-0 font-medium hover:underline"
             aria-label="Fermer"
           >
-            ✕
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -267,7 +268,7 @@ export default function DashboardStagiaire() {
                           <div className="flex flex-col gap-1">
                             {creneauxAtelier.map(c => (
                               <p key={c.id} className="text-xs text-purple-800">
-                                📅 {formatJourCourt(c.jour)} · {c.heureDebut}–{c.heureFin}
+                                <Calendar className="inline h-3 w-3 mr-1" />{formatJourCourt(c.jour)} · {c.heureDebut}–{c.heureFin}
                               </p>
                             ))}
                           </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { Lock } from 'lucide-react'
 import { Creneau, Temps, Atelier, Inscription, TypeStagiaire } from '@/types'
 import { inscrire, inscrireAtelier, desinscrire } from '@/services/inscriptions'
 import { getTempsVisiblesParStagiaire } from '@/lib/utils/planning'
@@ -308,7 +309,7 @@ export function OnboardingWizard({
                   <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
                     {creneau.heureDebut} – {creneau.heureFin}
                     {isVerrouille && (
-                      <span className="ml-2 text-slate-400" title="Inscription verrouillée">🔒</span>
+                      <span title="Inscription verrouillée" className="inline ml-2"><Lock className="inline h-3 w-3 text-slate-400" /></span>
                     )}
                   </p>
                   <div className="flex flex-col gap-2">

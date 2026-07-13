@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { Check } from 'lucide-react'
 import { Temps, Creneau } from '@/types'
 import { updateTemps } from '@/services/temps'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -105,7 +106,7 @@ export function BleuConfigPanel({ temps, creneaux }: Props) {
                 disabled={row.saving}
                 className={row.saved ? 'bg-green-500 hover:bg-green-500 text-white' : ''}
               >
-                {row.saving ? '…' : row.saved ? '✓ Sauvé' : 'Sauvegarder'}
+                {row.saving ? '…' : row.saved ? <><Check className="h-3.5 w-3.5 mr-1 inline" />Sauvé</> : 'Sauvegarder'}
               </Button>
             </div>
 

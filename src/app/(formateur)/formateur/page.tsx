@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { X } from 'lucide-react'
 import { PresenceList } from '@/components/presence/PresenceList'
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog'
 import { User } from '@/types'
@@ -296,7 +297,7 @@ export default function DashboardFormateur() {
             {appelError && (
               <div className="mb-3 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive flex items-start justify-between gap-2">
                 <span>{appelError}</span>
-                <button onClick={() => setAppelError(null)} className="shrink-0 font-medium hover:underline" aria-label="Fermer">✕</button>
+                <button onClick={() => setAppelError(null)} className="shrink-0 hover:opacity-70" aria-label="Fermer"><X className="h-4 w-4" /></button>
               </div>
             )}
 
