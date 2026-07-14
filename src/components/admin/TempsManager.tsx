@@ -689,7 +689,13 @@ function TempsSection({
         <p className="text-sm text-muted-foreground py-4 text-center">Aucun temps.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {temps.map(t => {
+          {[...temps].sort((a, b) => {
+            const ca = creneaux.find(c => c.id === a.creneauId)
+            const cb = creneaux.find(c => c.id === b.creneauId)
+            const keyA = ca ? `${ca.jour}${ca.heureDebut}` : ''
+            const keyB = cb ? `${cb.jour}${cb.heureDebut}` : ''
+            return keyA.localeCompare(keyB)
+          }).map(t => {
             const creneau = creneaux.find(c => c.id === t.creneauId)
             return (
               <div
