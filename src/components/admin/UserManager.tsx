@@ -237,8 +237,8 @@ export function UserManager() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nom</TableHead>
                 <TableHead>Prénom</TableHead>
+                <TableHead>Nom</TableHead>
                 <TableHead>Identifiant</TableHead>
                 <TableHead>Rôle</TableHead>
                 <TableHead>Type</TableHead>
@@ -248,8 +248,8 @@ export function UserManager() {
             <TableBody>
               {filtered.map(user => (
                 <TableRow key={user.uid}>
-                  <TableCell className="font-medium">{user.nom}</TableCell>
-                  <TableCell>{user.prenom}</TableCell>
+                  <TableCell className="font-medium">{user.prenom}</TableCell>
+                  <TableCell>{user.nom}</TableCell>
                   <TableCell className="font-mono text-xs">{user.identifiant}</TableCell>
                   <TableCell>
                     <RoleBadge role={user.role} />
