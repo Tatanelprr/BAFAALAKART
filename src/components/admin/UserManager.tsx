@@ -248,8 +248,10 @@ export function UserManager() {
             <TableBody>
               {filtered.map(user => (
                 <TableRow key={user.uid}>
-                  <TableCell className="font-medium">{user.prenom}</TableCell>
-                  <TableCell>{user.nom}</TableCell>
+                  <TableCell className="font-medium">
+                    {user.prenom.charAt(0).toUpperCase() + user.prenom.slice(1).toLowerCase()}
+                  </TableCell>
+                  <TableCell className="uppercase">{user.nom}</TableCell>
                   <TableCell className="font-mono text-xs">{user.identifiant}</TableCell>
                   <TableCell>
                     <RoleBadge role={user.role} />
