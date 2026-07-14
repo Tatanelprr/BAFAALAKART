@@ -25,3 +25,24 @@ export function usePresences(tempsId?: string): UsePresencesResult {
 
   return { presences, loading }
 }
+
+export function usePresencesStagiaire(stagiaireId: string): UsePresencesResult {
+  const [presences, setPresences] = useState<Presence[]>([])
+  const [loading, setLoading] = useState(Boolean(stagiaireId))
+
+  useEffect(() => {
+    if (!stagiaireId) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    const q = query(collection(db, 'presences'), where('stagiaireId', '==', stagiaireId))
+    const unsub = onSnapshot(q, snap => {
+      setPresences(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Presence))
+      setLoading(false)
+    })
+    return unsub
+  }, [stagiaireId])
+
+  return { presences, loading }
+}

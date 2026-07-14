@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useTemps } from '@/hooks/useTemps'
 import { useInscriptions } from '@/hooks/useInscriptions'
+import { usePresencesStagiaire } from '@/hooks/usePresences'
 import { inscrire, inscrireAtelier, desinscrire } from '@/services/inscriptions'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -14,7 +15,33 @@ import { OnboardingWizard } from '@/components/stagiaire/OnboardingWizard'
 import { ObligationsChecklist } from '@/components/stagiaire/ObligationsChecklist'
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog'
 import { getCreneauxVisiblesParStagiaire } from '@/lib/utils/planning'
-import { X, Calendar } from 'lucide-react'
+import { X, Calendar, CheckCircle } from 'lucide-react'
+import { Temps, Creneau } from '@/types'
+
+const TYPE_BORDER: Record<string, string> = {
+  bleu: 'border-l-blue-500',
+  orange: 'border-l-orange-500',
+  violet: 'border-l-purple-500',
+  sans_formation: 'border-l-gray-400',
+}
+
+const TYPE_LABEL: Record<string, string> = {
+  bleu: 'Bleu',
+  orange: 'Orange',
+  violet: 'Atelier',
+  sans_formation: 'Temps libre',
+}
+
+const TYPE_BADGE: Record<string, string> = {
+  bleu: 'bg-blue-100 text-blue-700 border-blue-300',
+  orange: 'bg-orange-100 text-orange-700 border-orange-300',
+  violet: 'bg-purple-100 text-purple-700 border-purple-300',
+  sans_formation: 'bg-gray-100 text-gray-600 border-gray-300',
+}
+
+function getTodayISO(): string {
+  return new Date().toISOString().slice(0, 10)
+}
 
 export default function DashboardStagiaire() {
   const { currentUser, logout } = useAuth()
@@ -22,15 +49,60 @@ export default function DashboardStagiaire() {
   const { temps, creneaux, ateliers, loading: loadingTemps } = useTemps()
   const uid = currentUser?.uid ?? ''
   const { inscriptions, loading: loadingInscriptions } = useInscriptions(uid)
+  const { presences: mesPresences, loading: loadingPresences } = usePresencesStagiaire(uid)
 
   const [error, setError] = useState<string | null>(null)
   const [isSwapping, setIsSwapping] = useState(false)
 
   const typeStagiaire = currentUser?.typeStagiaire ?? 'Base'
+  const todayISO = useMemo(() => getTodayISO(), [])
 
   const creneauxVisibles = useMemo(
     () => getCreneauxVisiblesParStagiaire(creneaux, typeStagiaire),
     [creneaux, typeStagiaire]
+  )
+
+  // IDs de créneaux où le stagiaire a été marqué présent
+  const creneauxConsommes = useMemo(() => {
+    const presentsTempsIds = new Set(mesPresences.filter(p => p.present).map(p => p.tempsId))
+    const ids = new Set<string>()
+    for (const t of temps) {
+      if (presentsTempsIds.has(t.id)) ids.add(t.creneauId)
+    }
+    return ids
+  }, [mesPresences, temps])
+
+  // Créneaux encore visibles dans le planning : ni passés, ni consommés par une présence
+  const creneauxActifs = useMemo(
+    () => creneauxVisibles.filter(c => c.jour >= todayISO && !creneauxConsommes.has(c.id)),
+    [creneauxVisibles, todayISO, creneauxConsommes]
+  )
+
+  // Temps passés validés, groupés par jour de créneau
+  const tempsPresentsParJour = useMemo(() => {
+    const presentsTempsIds = new Set(mesPresences.filter(p => p.present).map(p => p.tempsId))
+    const byJour: Record<string, Array<{ temps: Temps; creneau: Creneau }>> = {}
+    for (const t of temps) {
+      if (!presentsTempsIds.has(t.id)) continue
+      const creneau = creneaux.find(c => c.id === t.creneauId)
+      if (!creneau) continue
+      if (!byJour[creneau.jour]) byJour[creneau.jour] = []
+      byJour[creneau.jour].push({ temps: t, creneau })
+    }
+    for (const items of Object.values(byJour)) {
+      items.sort((a, b) => a.creneau.heureDebut.localeCompare(b.creneau.heureDebut))
+    }
+    return byJour
+  }, [mesPresences, temps, creneaux])
+
+  const joursPassesAvecPresences = useMemo(
+    () => Object.keys(tempsPresentsParJour).sort(),
+    [tempsPresentsParJour]
+  )
+
+  const totalPresents = useMemo(
+    () => Object.values(tempsPresentsParJour).reduce((sum, items) => sum + items.length, 0),
+    [tempsPresentsParJour]
   )
 
   const tempsCreneauMap = useMemo<Record<string, string>>(() => {
@@ -52,6 +124,12 @@ export default function DashboardStagiaire() {
       })
     return Object.values(covered).every(Boolean)
   }, [temps, inscriptions, typeStagiaire])
+
+  // Le wizard s'affiche s'il reste des créneaux actifs sans inscription, ou des bleus non couverts
+  const hasMissingFutureInscriptions = useMemo(
+    () => creneauxActifs.some(c => !inscriptions.some(i => i.creneauId === c.id)),
+    [creneauxActifs, inscriptions]
+  )
 
   const handleLogout = async () => {
     await logout()
@@ -128,7 +206,7 @@ export default function DashboardStagiaire() {
     return ateliers.filter(a => ateliersInscrits.has(a.id))
   }, [inscriptions, temps, ateliers])
 
-  const loading = loadingTemps || loadingInscriptions
+  const loading = loadingTemps || loadingInscriptions || loadingPresences
 
   if (!currentUser) {
     return (
@@ -183,9 +261,9 @@ export default function DashboardStagiaire() {
           <div className="py-12 text-center text-muted-foreground text-sm">
             Chargement du planning…
           </div>
-        ) : !isSwapping && (inscriptions.length < creneauxVisibles.length || !allMandatoryBluesCovered) ? (
+        ) : !isSwapping && (hasMissingFutureInscriptions || !allMandatoryBluesCovered) ? (
           <OnboardingWizard
-            creneaux={creneauxVisibles}
+            creneaux={creneauxActifs}
             temps={temps}
             ateliers={ateliers}
             inscriptions={inscriptions}
@@ -207,13 +285,21 @@ export default function DashboardStagiaire() {
                 )}
               </TabsTrigger>
               <TabsTrigger value="obligations" className="flex-1">
-                Mes bleus
+                Bleus
+              </TabsTrigger>
+              <TabsTrigger value="passe" className="flex-1">
+                Passé
+                {totalPresents > 0 && (
+                  <Badge className="ml-1.5 bg-green-100 text-green-700 border-green-300 h-4 px-1.5 text-[10px]">
+                    {totalPresents}
+                  </Badge>
+                )}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="planning">
               <PlanningView
-                creneaux={creneauxVisibles}
+                creneaux={creneauxActifs}
                 temps={temps}
                 ateliers={ateliers}
                 inscriptions={inscriptions}
@@ -276,6 +362,51 @@ export default function DashboardStagiaire() {
                       </div>
                     )
                   })}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="passe">
+              {joursPassesAvecPresences.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground text-sm">
+                  Aucun temps validé pour l&apos;instant.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-6">
+                  {joursPassesAvecPresences.map(jour => (
+                    <section key={jour}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="h-px flex-1 bg-border" />
+                        <h2 className="text-sm font-semibold text-foreground shrink-0">
+                          {formatJourCourt(jour)}
+                        </h2>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {tempsPresentsParJour[jour].map(({ temps: t, creneau: c }) => (
+                          <div
+                            key={t.id}
+                            className={`rounded-lg border border-l-4 ${TYPE_BORDER[t.type] ?? 'border-l-gray-400'} bg-card p-3`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium leading-snug">{t.nom}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {c.heureDebut}–{c.heureFin}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <Badge className={`text-[10px] h-4 px-1.5 ${TYPE_BADGE[t.type] ?? 'bg-gray-100 text-gray-600'}`}>
+                                  {TYPE_LABEL[t.type] ?? t.type}
+                                </Badge>
+                                <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
                 </div>
               )}
             </TabsContent>
