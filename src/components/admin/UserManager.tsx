@@ -53,6 +53,8 @@ interface EditDialogProps {
 
 function EditUserDialog({ user, onSaved }: EditDialogProps) {
   const [open, setOpen] = useState(false)
+  const [prenom, setPrenom] = useState(user.prenom)
+  const [nom, setNom] = useState(user.nom)
   const [role, setRole] = useState<UserRole>(user.role)
   const [typeStagiaire, setTypeStagiaire] = useState<TypeStagiaire | ''>(user.typeStagiaire ?? '')
   const [saving, setSaving] = useState(false)
@@ -60,6 +62,8 @@ function EditUserDialog({ user, onSaved }: EditDialogProps) {
   // Reset state when dialog opens
   const handleOpenChange = (val: boolean) => {
     if (val) {
+      setPrenom(user.prenom)
+      setNom(user.nom)
       setRole(user.role)
       setTypeStagiaire(user.typeStagiaire ?? '')
     }
@@ -69,11 +73,14 @@ function EditUserDialog({ user, onSaved }: EditDialogProps) {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const data: Partial<Omit<User, 'uid' | 'createdAt'>> = { role }
+      const data: Partial<Omit<User, 'uid' | 'createdAt'>> = {
+        prenom: prenom.trim(),
+        nom: nom.trim(),
+        role,
+      }
       if (role === 'stagiaire' && typeStagiaire) {
         data.typeStagiaire = typeStagiaire
       } else {
-        // Clear typeStagiaire if not stagiaire
         data.typeStagiaire = undefined
       }
       await updateUser(user.uid, data)
@@ -99,6 +106,26 @@ function EditUserDialog({ user, onSaved }: EditDialogProps) {
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-2">
+          {/* Prénom */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`prenom-${user.uid}`}>Prénom</Label>
+            <Input
+              id={`prenom-${user.uid}`}
+              value={prenom}
+              onChange={e => setPrenom(e.target.value)}
+            />
+          </div>
+
+          {/* Nom */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`nom-${user.uid}`}>Nom</Label>
+            <Input
+              id={`nom-${user.uid}`}
+              value={nom}
+              onChange={e => setNom(e.target.value)}
+            />
+          </div>
+
           {/* Rôle */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={`role-${user.uid}`}>Rôle</Label>
