@@ -367,15 +367,24 @@ export function InscriptionsManager() {
 
   const loading = loadingStagiaires || loadingTemps || loadingInscriptions
 
-  // Filter stagiaires by search
-  const filteredStagiaires = stagiaires.filter(s => {
-    const q = search.toLowerCase()
-    return (
-      s.nom.toLowerCase().includes(q) ||
-      s.prenom.toLowerCase().includes(q) ||
-      s.identifiant.toLowerCase().includes(q)
-    )
-  })
+  // Filter stagiaires by search, sorted Base → Appro then prénom/nom alphabetically
+  const filteredStagiaires = stagiaires
+    .filter(s => {
+      const q = search.toLowerCase()
+      return (
+        s.nom.toLowerCase().includes(q) ||
+        s.prenom.toLowerCase().includes(q) ||
+        s.identifiant.toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => {
+      const groupOrder = (u: typeof a) => (u.typeStagiaire === 'Base' ? 0 : 1)
+      const groupDiff = groupOrder(a) - groupOrder(b)
+      if (groupDiff !== 0) return groupDiff
+      const prenomDiff = a.prenom.localeCompare(b.prenom, 'fr', { sensitivity: 'base' })
+      if (prenomDiff !== 0) return prenomDiff
+      return a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' })
+    })
 
   // Group inscriptions by stagiaireId
   const inscriptionsByStagiaire = new Map<string, Inscription[]>()
