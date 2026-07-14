@@ -758,8 +758,16 @@ export function TempsManager() {
   }, [inscriptions])
 
   const tempsEnAlerte = useMemo(
-    () => temps.filter(t => (countInscriptions[t.id] ?? 0) < 4),
-    [temps, countInscriptions]
+    () => temps
+      .filter(t => (countInscriptions[t.id] ?? 0) < 4)
+      .sort((a, b) => {
+        const ca = creneaux.find(c => c.id === a.creneauId)
+        const cb = creneaux.find(c => c.id === b.creneauId)
+        const keyA = ca ? `${ca.jour}${ca.heureDebut}` : ''
+        const keyB = cb ? `${cb.jour}${cb.heureDebut}` : ''
+        return keyA.localeCompare(keyB)
+      }),
+    [temps, countInscriptions, creneaux]
   )
 
   if (loading) {
