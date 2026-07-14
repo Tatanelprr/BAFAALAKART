@@ -32,7 +32,8 @@ export default function DashboardAdmin() {
         <div>
           <p className="text-xs text-muted-foreground mb-0.5">Administrateur</p>
           <h1 className="text-xl font-bold leading-tight">
-            {currentUser.prenom} {currentUser.nom}
+            {currentUser.prenom.charAt(0).toUpperCase() + currentUser.prenom.slice(1).toLowerCase()}{' '}
+            <span className="uppercase">{currentUser.nom}</span>
           </h1>
         </div>
         <div className="flex gap-2">
