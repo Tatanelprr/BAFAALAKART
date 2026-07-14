@@ -399,7 +399,15 @@ export function InscriptionsManager() {
   for (const insc of inscriptions) {
     inscriptionsByTemps.set(insc.tempsId, (inscriptionsByTemps.get(insc.tempsId) ?? 0) + 1)
   }
-  const tempsUnderMin = temps.filter(t => (inscriptionsByTemps.get(t.id) ?? 0) < 4)
+  const tempsUnderMin = temps
+    .filter(t => (inscriptionsByTemps.get(t.id) ?? 0) < 4)
+    .sort((a, b) => {
+      const ca = creneaux.find(c => c.id === a.creneauId)
+      const cb = creneaux.find(c => c.id === b.creneauId)
+      const keyA = ca ? `${ca.jour}${ca.heureDebut}` : ''
+      const keyB = cb ? `${cb.jour}${cb.heureDebut}` : ''
+      return keyA.localeCompare(keyB)
+    })
 
   const handleToggle = (uid: string) => {
     setExpandedId(prev => (prev === uid ? null : uid))
