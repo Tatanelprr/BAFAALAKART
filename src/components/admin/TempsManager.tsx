@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTemps } from '@/hooks/useTemps'
+import { useInscriptions } from '@/hooks/useInscriptions'
+import { AlertTriangle } from 'lucide-react'
 import { Temps, Creneau, Atelier, TypeTemps } from '@/types'
 import {
   createTemps,
@@ -745,6 +747,20 @@ function TempsSection({
 
 export function TempsManager() {
   const { temps, creneaux, ateliers, loading } = useTemps()
+  const { inscriptions } = useInscriptions()
+
+  const countInscriptions = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const insc of inscriptions) {
+      map[insc.tempsId] = (map[insc.tempsId] ?? 0) + 1
+    }
+    return map
+  }, [inscriptions])
+
+  const tempsEnAlerte = useMemo(
+    () => temps.filter(t => (countInscriptions[t.id] ?? 0) < 4),
+    [temps, countInscriptions]
+  )
 
   if (loading) {
     return (
@@ -756,6 +772,28 @@ export function TempsManager() {
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Alerte temps sous le minimum */}
+      {tempsEnAlerte.length > 0 && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+          <div className="flex items-center gap-2 mb-1.5">
+            <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+            <p className="text-sm font-semibold text-red-700">
+              {tempsEnAlerte.length} temps sous le minimum de 4 participants
+            </p>
+          </div>
+          <ul className="flex flex-col gap-0.5 pl-6">
+            {tempsEnAlerte.map(t => {
+              const creneau = creneaux.find(c => c.id === t.creneauId)
+              return (
+                <li key={t.id} className="text-xs text-red-600">
+                  {t.nom}{creneau ? ` (${formatCreneau(creneau)})` : ''} — {countInscriptions[t.id] ?? 0} inscrit{(countInscriptions[t.id] ?? 0) !== 1 ? 's' : ''}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+
       {/* Section Créneaux */}
       <section>
         <CreneauxSection creneaux={creneaux} />
