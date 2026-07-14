@@ -187,14 +187,27 @@ export function UserManager() {
     setUsers(prev => prev.map(u => (u.uid === updated.uid ? updated : u)))
   }
 
-  const filtered = users.filter(u => {
-    const q = search.toLowerCase()
-    return (
-      u.nom.toLowerCase().includes(q) ||
-      u.prenom.toLowerCase().includes(q) ||
-      u.identifiant.toLowerCase().includes(q)
-    )
-  })
+  const filtered = users
+    .filter(u => {
+      const q = search.toLowerCase()
+      return (
+        u.nom.toLowerCase().includes(q) ||
+        u.prenom.toLowerCase().includes(q) ||
+        u.identifiant.toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => {
+      const groupOrder = (u: typeof a) => {
+        if (u.role === 'stagiaire') return u.typeStagiaire === 'Base' ? 0 : 1
+        if (u.role === 'formateur') return 2
+        return 3 // admin
+      }
+      const groupDiff = groupOrder(a) - groupOrder(b)
+      if (groupDiff !== 0) return groupDiff
+      const prenomDiff = a.prenom.localeCompare(b.prenom, 'fr', { sensitivity: 'base' })
+      if (prenomDiff !== 0) return prenomDiff
+      return a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' })
+    })
 
   return (
     <div className="flex flex-col gap-4">
