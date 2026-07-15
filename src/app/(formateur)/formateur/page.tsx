@@ -171,9 +171,9 @@ export default function DashboardFormateur() {
           </h1>
         </div>
         <div className="flex flex-col gap-1.5 items-end shrink-0 mt-1">
-          {currentUser.role === 'admin' && (
+          {(currentUser.role === 'admin' || currentUser.role === 'formateur') && (
             <Button variant="outline" size="sm" onClick={() => router.push('/admin')}>
-              ← Admin
+              Panel
             </Button>
           )}
           <ChangePasswordDialog
