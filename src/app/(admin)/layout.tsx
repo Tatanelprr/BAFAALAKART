@@ -10,11 +10,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!loading) {
       if (!currentUser) router.replace('/login')
-      else if (currentUser.role !== 'admin') router.replace('/login')
+      else if (currentUser.role !== 'admin' && currentUser.role !== 'formateur') router.replace('/login')
     }
   }, [currentUser, loading, router])
 
-  if (loading || !currentUser || currentUser.role !== 'admin') {
+  if (loading || !currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'formateur')) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900" />

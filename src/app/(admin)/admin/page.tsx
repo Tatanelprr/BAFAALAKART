@@ -25,12 +25,16 @@ export default function DashboardAdmin() {
 
   if (!currentUser) return null
 
+  const isAdmin = currentUser.role === 'admin'
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
       <header className="px-4 pt-6 pb-4 border-b bg-card flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Administrateur</p>
+          <p className="text-xs text-muted-foreground mb-0.5">
+            {isAdmin ? 'Administrateur' : 'Formateur'}
+          </p>
           <h1 className="text-xl font-bold leading-tight">
             {currentUser.prenom.charAt(0).toUpperCase() + currentUser.prenom.slice(1).toLowerCase()}{' '}
             <span className="uppercase">{currentUser.nom}</span>
@@ -56,35 +60,41 @@ export default function DashboardAdmin() {
 
       {/* Contenu principal */}
       <div className="flex-1 px-4 py-4">
-        <Tabs defaultValue="utilisateurs">
+        <Tabs defaultValue={isAdmin ? 'utilisateurs' : 'temps'}>
           <TabsList className="mb-6 flex-wrap h-auto gap-1">
-            <TabsTrigger value="utilisateurs">Utilisateurs</TabsTrigger>
+            {isAdmin && <TabsTrigger value="utilisateurs">Utilisateurs</TabsTrigger>}
             <TabsTrigger value="temps">Temps</TabsTrigger>
-            <TabsTrigger value="bleus">Config. bleus</TabsTrigger>
+            {isAdmin && <TabsTrigger value="bleus">Config. bleus</TabsTrigger>}
             <TabsTrigger value="inscriptions">Inscriptions</TabsTrigger>
-            <TabsTrigger value="import">Import</TabsTrigger>
+            {isAdmin && <TabsTrigger value="import">Import</TabsTrigger>}
             <TabsTrigger value="export">Export</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="utilisateurs">
-            <UserManager />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="utilisateurs">
+              <UserManager />
+            </TabsContent>
+          )}
 
           <TabsContent value="temps">
             <TempsManager />
           </TabsContent>
 
-          <TabsContent value="bleus">
-            <BleuConfigPanel temps={temps} creneaux={creneaux} />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="bleus">
+              <BleuConfigPanel temps={temps} creneaux={creneaux} />
+            </TabsContent>
+          )}
 
           <TabsContent value="inscriptions">
             <InscriptionsManager />
           </TabsContent>
 
-          <TabsContent value="import">
-            <ImportPanel />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="import">
+              <ImportPanel />
+            </TabsContent>
+          )}
 
           <TabsContent value="export">
             <ExportPanel />
