@@ -176,25 +176,32 @@ export default function DashboardFormateur() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
-      <header className="px-4 pt-6 pb-4 border-b bg-card flex items-start justify-between gap-4">
+      <header className="px-4 pt-6 pb-5 bg-gradient-to-br from-orange-500 to-amber-400 flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Formateur</p>
-          <h1 className="text-xl font-bold leading-tight">
+          <p className="text-xs text-white/70 mb-0.5">Formateur</p>
+          <h1 className="text-xl font-bold leading-tight text-white">
             {currentUser.prenom.charAt(0).toUpperCase() + currentUser.prenom.slice(1).toLowerCase()}{' '}
             <span className="uppercase">{currentUser.nom}</span>
           </h1>
         </div>
         <div className="flex flex-col gap-1.5 items-end shrink-0 mt-1">
           {(currentUser.role === 'admin' || currentUser.role === 'formateur') && (
-            <Button variant="outline" size="sm" onClick={() => router.push('/admin')}>
+            <Button variant="outline" size="sm" onClick={() => router.push('/admin')}
+              className="bg-white/20 hover:bg-white/30 text-white border-white/30">
               Panel
             </Button>
           )}
           <ChangePasswordDialog
             identifiant={currentUser.identifiant}
-            trigger={<Button variant="outline" size="sm">Mot de passe</Button>}
+            trigger={
+              <Button variant="outline" size="sm"
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30">
+                Mot de passe
+              </Button>
+            }
           />
-          <Button variant="outline" size="sm" onClick={async () => { await logout(); router.replace('/login') }}>
+          <Button variant="outline" size="sm" onClick={async () => { await logout(); router.replace('/login') }}
+            className="bg-white/20 hover:bg-white/30 text-white border-white/30">
             Déconnexion
           </Button>
         </div>
