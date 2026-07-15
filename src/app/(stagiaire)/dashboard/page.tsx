@@ -219,24 +219,30 @@ export default function DashboardStagiaire() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
-      <header className="px-4 pt-6 pb-4 border-b bg-card flex items-start justify-between gap-4">
+      <header className="px-4 pt-6 pb-5 bg-gradient-to-br from-orange-500 to-amber-400 flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Bonjour,</p>
-          <h1 className="text-xl font-bold leading-tight">
+          <p className="text-xs text-white/70 mb-0.5">Bonjour,</p>
+          <h1 className="text-xl font-bold leading-tight text-white">
             {currentUser.prenom.charAt(0).toUpperCase() + currentUser.prenom.slice(1).toLowerCase()}{' '}
             <span className="uppercase">{currentUser.nom}</span>
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-white/70 mt-1">
             Groupe{' '}
-            <span className="font-medium text-foreground">{typeStagiaire}</span>
+            <span className="font-semibold text-white">{typeStagiaire}</span>
           </p>
         </div>
         <div className="flex flex-col gap-1.5 items-end shrink-0 mt-1">
           <ChangePasswordDialog
             identifiant={currentUser.identifiant}
-            trigger={<Button variant="outline" size="sm">Mot de passe</Button>}
+            trigger={
+              <Button variant="outline" size="sm"
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30">
+                Mot de passe
+              </Button>
+            }
           />
-          <Button variant="outline" size="sm" onClick={handleLogout}>
+          <Button variant="outline" size="sm" onClick={handleLogout}
+            className="bg-white/20 hover:bg-white/30 text-white border-white/30">
             Déconnexion
           </Button>
         </div>
