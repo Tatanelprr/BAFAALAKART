@@ -88,13 +88,27 @@ export default function DashboardFormateur() {
     [creneaux, selectedDay]
   )
 
-  // Temps for the selected day
+  // Temps for the selected day, sorted chronologically
   const tempsDuJour = useMemo(() => {
-    const creneauIdsDuJour = new Set(creneauxDuJour.map(c => c.id))
-    return temps.filter(t => creneauIdsDuJour.has(t.creneauId))
+    const creneauxMap = new Map(creneauxDuJour.map(c => [c.id, c]))
+    return temps
+      .filter(t => creneauxMap.has(t.creneauId))
+      .sort((a, b) => {
+        const ha = creneauxMap.get(a.creneauId)?.heureDebut ?? ''
+        const hb = creneauxMap.get(b.creneauId)?.heureDebut ?? ''
+        return ha.localeCompare(hb)
+      })
   }, [temps, creneauxDuJour])
 
   // Reset selected temps when day changes — done in handleDayChange
+
+  const selectedTempsLabel = useMemo(() => {
+    if (!selectedTempsId) return ''
+    const t = tempsDuJour.find(t => t.id === selectedTempsId)
+    if (!t) return ''
+    const c = creneaux.find(c => c.id === t.creneauId)
+    return `${t.nom}${c ? ` (${c.heureDebut}–${c.heureFin})` : ''}`
+  }, [selectedTempsId, tempsDuJour, creneaux])
 
   // Inscriptions filtered for selected temps
   const inscriptionsDuTemps = useMemo(
@@ -295,7 +309,9 @@ export default function DashboardFormateur() {
                 onValueChange={(val) => setSelectedTempsId(val ?? '')}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionner un temps…" />
+                  <SelectValue placeholder="Sélectionner un temps…">
+                    {selectedTempsLabel || undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {tempsDuJour.length === 0 ? (
