@@ -25,6 +25,7 @@ export function PresenceList({
 }: PresenceListProps) {
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set())
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [validerTousLoading, setValiderTousLoading] = useState(false)
 
   if (inscriptions.length === 0) {
     return (
@@ -32,6 +33,23 @@ export function PresenceList({
         Aucun stagiaire inscrit à ce temps.
       </div>
     )
+  }
+
+  const handleValiderTous = async () => {
+    const aValider = inscriptions.filter(insc => {
+      const presence = presences.find(p => p.stagiaireId === insc.stagiaireId)
+      return presence?.present !== true
+    })
+    if (aValider.length === 0) return
+    setValiderTousLoading(true)
+    for (const insc of aValider) {
+      try {
+        await onValider(insc.stagiaireId, insc.id)
+      } catch {
+        // erreurs individuelles gérées dans onValider
+      }
+    }
+    setValiderTousLoading(false)
   }
 
   const handleToggle = async (
@@ -65,8 +83,21 @@ export function PresenceList({
     }
   }
 
+  const tousPresents = inscriptions.every(insc =>
+    presences.find(p => p.stagiaireId === insc.stagiaireId)?.present === true
+  )
+
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
+      <Button
+        variant="outline"
+        className="w-full border-green-300 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+        disabled={validerTousLoading || tousPresents || loadingIds.size > 0}
+        onClick={handleValiderTous}
+      >
+        {validerTousLoading ? 'Validation en cours…' : tousPresents ? 'Tout le monde est présent' : 'Tout valider'}
+      </Button>
+      <div className="flex flex-col gap-2">
       {inscriptions.map(insc => {
         const stagiaire = stagiaires.find(s => s.uid === insc.stagiaireId)
         if (!stagiaire) return null
@@ -142,6 +173,7 @@ export function PresenceList({
           </div>
         )
       })}
+      </div>
     </div>
   )
 }
