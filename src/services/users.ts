@@ -1,5 +1,5 @@
 import { collection, doc, getDoc, getDocs, query, where, updateDoc, deleteDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
+import { db, auth } from '@/lib/firebase/config'
 import { User } from '@/types'
 
 export async function getUser(uid: string): Promise<User | null> {
@@ -30,5 +30,21 @@ export async function updateUser(uid: string, data: Partial<Omit<User, 'uid' | '
 }
 
 export async function deleteUser(uid: string): Promise<void> {
+  const token = await auth.currentUser?.getIdToken()
+  if (!token) throw new Error('NOT_AUTHENTICATED')
+
+  const res = await fetch('/api/delete-user', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ uid }),
+  })
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error ?? 'DELETE_FAILED')
+  }
+
   await deleteDoc(doc(db, 'users', uid))
 }
