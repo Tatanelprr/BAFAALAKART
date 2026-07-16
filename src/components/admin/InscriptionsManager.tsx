@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { collection, onSnapshot, query, where } from 'firebase/firestore'
+import { db } from '@/lib/firebase/config'
 import { listStagiaires } from '@/services/users'
 import { desinscireAdmin, inscrireAdmin } from '@/services/inscriptions'
 import { useTemps } from '@/hooks/useTemps'
@@ -203,6 +205,7 @@ interface StagiaireSectionProps {
   adminId: string
   creneaux: Creneau[]
   temps: import('@/types').Temps[]
+  presentsSet: Set<string>
   expanded: boolean
   onToggle: () => void
   onRefresh: () => void
@@ -214,6 +217,7 @@ function StagiaireSection({
   adminId,
   creneaux,
   temps,
+  presentsSet,
   expanded,
   onToggle,
   onRefresh,
@@ -307,11 +311,14 @@ function StagiaireSection({
                       >
                         {ORIGINE_LABEL[insc.origine] ?? insc.origine}
                       </Badge>
-                      {insc.verrouille && (
-                        <Badge variant="outline" className={`text-xs ${t?.type === 'violet' ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-green-300 bg-green-50 text-green-700'}`}>
-                          {t?.type === 'violet' ? 'Verrouillé' : 'Présent'}
-                        </Badge>
-                      )}
+                      {insc.verrouille && (() => {
+                        const isPresent = presentsSet.has(`${insc.stagiaireId}_${insc.tempsId}`)
+                        return isPresent
+                          ? <Badge variant="outline" className="text-xs border-green-300 bg-green-50 text-green-700">Présent</Badge>
+                          : t?.type === 'violet'
+                            ? <Badge variant="outline" className="text-xs border-amber-300 bg-amber-50 text-amber-700">Verrouillé</Badge>
+                            : <Badge variant="outline" className="text-xs border-green-300 bg-green-50 text-green-700">Présent</Badge>
+                      })()}
                       <Button
                         variant="destructive"
                         size="sm"
@@ -357,12 +364,20 @@ export function InscriptionsManager() {
 
   const { temps, creneaux, loading: loadingTemps } = useTemps()
   const { inscriptions, loading: loadingInscriptions } = useInscriptions()
+  const [presentsSet, setPresentsSet] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     listStagiaires()
       .then(setStagiaires)
       .catch(console.error)
       .finally(() => setLoadingStagiaires(false))
+  }, [])
+
+  useEffect(() => {
+    const q = query(collection(db, 'presences'), where('present', '==', true))
+    return onSnapshot(q, snap => {
+      setPresentsSet(new Set(snap.docs.map(d => `${d.data().stagiaireId}_${d.data().tempsId}`)))
+    })
   }, [])
 
   const loading = loadingStagiaires || loadingTemps || loadingInscriptions
@@ -456,6 +471,7 @@ export function InscriptionsManager() {
               adminId={currentUser.uid}
               creneaux={creneaux}
               temps={temps}
+              presentsSet={presentsSet}
               expanded={expandedId === stagiaire.uid}
               onToggle={() => handleToggle(stagiaire.uid)}
               onRefresh={handleRefresh}
