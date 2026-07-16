@@ -308,8 +308,8 @@ function StagiaireSection({
                         {ORIGINE_LABEL[insc.origine] ?? insc.origine}
                       </Badge>
                       {insc.verrouille && (
-                        <Badge variant="outline" className="text-xs border-amber-300 bg-amber-50 text-amber-700">
-                          Verrouillé
+                        <Badge variant="outline" className={`text-xs ${t?.type === 'violet' ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-green-300 bg-green-50 text-green-700'}`}>
+                          {t?.type === 'violet' ? 'Verrouillé' : 'Présent'}
                         </Badge>
                       )}
                       <Button
