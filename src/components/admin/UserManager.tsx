@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { listUsers, updateUser } from '@/services/users'
+import { listUsers, updateUser, deleteUser } from '@/services/users'
+import { useAuth } from '@/hooks/useAuth'
 import { User, UserRole, TypeStagiaire } from '@/types'
 import {
   Table,
@@ -172,9 +173,11 @@ function EditUserDialog({ user, onSaved }: EditDialogProps) {
 }
 
 export function UserManager() {
+  const { currentUser } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     listUsers()
@@ -185,6 +188,23 @@ export function UserManager() {
 
   const handleUserSaved = (updated: User) => {
     setUsers(prev => prev.map(u => (u.uid === updated.uid ? updated : u)))
+  }
+
+  const handleDelete = async (user: User) => {
+    const confirmed = window.confirm(
+      `Supprimer l'utilisateur ${user.prenom} ${user.nom} (${user.identifiant}) ? Cette action est irréversible.`
+    )
+    if (!confirmed) return
+    setDeletingId(user.uid)
+    try {
+      await deleteUser(user.uid)
+      setUsers(prev => prev.filter(u => u.uid !== user.uid))
+    } catch (err) {
+      console.error('Erreur suppression utilisateur:', err)
+      alert('Erreur lors de la suppression. Veuillez réessayer.')
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const filtered = users
@@ -264,7 +284,17 @@ export function UserManager() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <EditUserDialog user={user} onSaved={handleUserSaved} />
+                    <div className="flex items-center justify-end gap-2">
+                      <EditUserDialog user={user} onSaved={handleUserSaved} />
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={deletingId === user.uid || user.uid === currentUser?.uid}
+                        onClick={() => handleDelete(user)}
+                      >
+                        {deletingId === user.uid ? '…' : 'Supprimer'}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

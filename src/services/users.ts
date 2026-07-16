@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, where, updateDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, query, where, updateDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { User } from '@/types'
 
@@ -27,4 +27,8 @@ export async function listFormateurs(): Promise<User[]> {
 
 export async function updateUser(uid: string, data: Partial<Omit<User, 'uid' | 'createdAt'>>): Promise<void> {
   await updateDoc(doc(db, 'users', uid), data)
+}
+
+export async function deleteUser(uid: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid))
 }
