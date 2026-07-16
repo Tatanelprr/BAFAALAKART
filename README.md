@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BAFAALAKART
 
-## Getting Started
+Application web de gestion de stage BAFA/BAFD — planning, inscriptions, présences et suivi des temps obligatoires.
 
-First, run the development server:
+## Fonctionnalités
+
+### Stagiaires
+- Wizard d'inscription guidé au premier accès
+- Planning personnalisé par créneaux (filtré selon le type Base / Approfondissement)
+- Changement de temps en autonomie (bloqué si inscription verrouillée)
+- Checklist des temps bleus obligatoires avec suivi des groupes "1 parmi"
+- Onglet **Ateliers** pour visualiser ses sessions d'atelier violet
+- Onglet **Passé** listant les temps validés par présence
+
+### Formateurs
+- Faire l'appel par jour et par temps
+- Vue des temps du jour avec alerte si moins de 4 inscrits
+- Accès au panel admin en lecture/écriture limitée
+
+### Administrateurs
+- Gestion des utilisateurs (création via import CSV, modification, suppression)
+- Gestion des temps et créneaux (CRUD complet)
+- Configuration des temps bleus obligatoires (`obligatoireBase`, `obligatoireAppro`, groupes)
+- Panel inscriptions avec ajout/suppression par stagiaire
+- Import CSV en masse
+- Export des données (présences, inscriptions)
+
+## Stack technique
+
+| Couche | Outil |
+|---|---|
+| Framework | Next.js 15 (App Router) |
+| Base de données | Firebase Firestore |
+| Authentification | Firebase Auth (email synthétique `identifiant@bafaalakart.app`) |
+| UI | Tailwind CSS + shadcn/ui |
+| Icons | Lucide React |
+| Langage | TypeScript |
+
+## Architecture Firestore
+
+| Collection | Description |
+|---|---|
+| `users` | Profils utilisateurs (rôle, type stagiaire, identifiant) |
+| `temps` | Temps de formation (type, créneau, obligations, atelier) |
+| `creneaux` | Créneaux horaires (jour ISO, heureDebut/Fin, ordre) |
+| `ateliers` | Ateliers violets regroupant plusieurs temps |
+| `inscriptions` | Inscriptions stagiaire ↔ temps (origine, verrouille) |
+| `slots` | Document `stagiaireId_creneauId` garantissant l'unicité en transaction |
+| `presences` | Présences validées par les formateurs |
+| `historique` | Journal des actions (création, suppression, présences) |
+
+## Types de temps
+
+| Couleur | Signification |
+|---|---|
+| Bleu | Temps de formation (peut être obligatoire) |
+| Orange | Temps encadré non obligatoire |
+| Violet | Atelier multi-créneaux (inscription groupée) |
+| Sans formation | Temps libre |
+
+## Lancer le projet en local
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Créer un fichier `.env.local` avec les clés Firebase :
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Rôles et accès
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Rôle | Accès |
+|---|---|
+| `stagiaire` | Dashboard personnel (planning, ateliers, bleus, passé) |
+| `formateur` | Appel + panel admin (onglets Temps, Inscriptions, Export) |
+| `admin` | Accès complet |
