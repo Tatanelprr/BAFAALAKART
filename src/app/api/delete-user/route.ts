@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminAuth } from '@/lib/firebase/admin'
+import { getAdminAuth } from '@/lib/firebase/admin'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   let callerUid: string
   try {
-    const decoded = await adminAuth.verifyIdToken(authHeader.slice(7))
+    const decoded = await getAdminAuth().verifyIdToken(authHeader.slice(7))
     callerUid = decoded.uid
   } catch {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await adminAuth.deleteUser(uid)
+    await getAdminAuth().deleteUser(uid)
     return NextResponse.json({ success: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'
