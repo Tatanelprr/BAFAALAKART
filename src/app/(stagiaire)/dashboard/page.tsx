@@ -39,10 +39,6 @@ const TYPE_BADGE: Record<string, string> = {
   sans_formation: 'bg-gray-100 text-gray-600 border-gray-300',
 }
 
-function getTodayISO(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 export default function DashboardStagiaire() {
   const { currentUser, logout } = useAuth()
   const router = useRouter()
@@ -55,8 +51,6 @@ export default function DashboardStagiaire() {
   const [isSwapping, setIsSwapping] = useState(false)
 
   const typeStagiaire = currentUser?.typeStagiaire ?? 'Base'
-  const todayISO = useMemo(() => getTodayISO(), [])
-
   const creneauxVisibles = useMemo(
     () => getCreneauxVisiblesParStagiaire(creneaux, typeStagiaire),
     [creneaux, typeStagiaire]
@@ -74,8 +68,8 @@ export default function DashboardStagiaire() {
 
   // Créneaux encore visibles dans le planning : ni passés, ni consommés par une présence
   const creneauxActifs = useMemo(
-    () => creneauxVisibles.filter(c => c.jour >= todayISO && !creneauxConsommes.has(c.id)),
-    [creneauxVisibles, todayISO, creneauxConsommes]
+    () => creneauxVisibles.filter(c => !creneauxConsommes.has(c.id)),
+    [creneauxVisibles, creneauxConsommes]
   )
 
   // Temps passés validés, groupés par jour de créneau
