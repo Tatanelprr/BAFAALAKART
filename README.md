@@ -2,6 +2,8 @@
 
 Application web de gestion de stage BAFA/BAFD — planning, inscriptions, présences et suivi des temps obligatoires.
 
+- En ligne : https://bafaalakart.web.app
+
 ## Fonctionnalités
 
 ### Stagiaires
@@ -29,7 +31,7 @@ Application web de gestion de stage BAFA/BAFD — planning, inscriptions, prése
 
 | Couche | Outil |
 |---|---|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16 (App Router) |
 | Base de données | Firebase Firestore |
 | Authentification | Firebase Auth (email synthétique `identifiant@bafaalakart.app`) |
 | UI | Tailwind CSS + shadcn/ui |
