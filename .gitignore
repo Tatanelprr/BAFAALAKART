@@ -43,3 +43,8 @@ next-env.d.ts
 
 # credentials (identifiants et mots de passe en clair — ne jamais commiter)
 /credentials/
+
+# Fichiers de configuration d'outils locaux (non versionnés)
+/AGENTS.md
+/CLAUDE.md
+/docs/superpowers/
